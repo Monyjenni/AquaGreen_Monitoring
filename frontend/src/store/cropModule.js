@@ -138,7 +138,7 @@ const cropModule = {
       
       const headers = rootGetters.isAuthenticated ? { Authorization: `Bearer ${rootGetters.getAuthToken}` } : {}
       
-      return axios.post(`${API_URL}/csv-files/${fileId}/process_csv/`, {}, { headers })
+      return axios.post(`${API_URL}/csv-files/${fileId}/process/`, {}, { headers })
         .then(response => {
           return response.data
         })

@@ -19,7 +19,7 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>{{ currentFile.title }}</h1>
         <router-link to="/files" class="btn btn-outline-secondary">
-          Back to Files
+          <i class="bi bi-arrow-left me-1"></i> Back to Files
         </router-link>
       </div>
 

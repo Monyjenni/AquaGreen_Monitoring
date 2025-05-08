@@ -18,10 +18,10 @@
       </div>
       
       <div class="mt-3 d-flex justify-content-between">
-        <button @click="$emit('view-details', image)" class="btn btn-sm btn-outline-primary">
+        <button @click="$emit('view-details', image)" class="btn btn-sm btn-outline-success">
           View Details
         </button>
-        <button v-if="showEdit" @click="$emit('edit-image', image)" class="btn btn-sm btn-outline-secondary">
+        <button v-if="showEdit" @click="$emit('edit-image', image)" class="btn btn-sm btn-outline-success">
           Edit
         </button>
       </div>
@@ -52,6 +52,7 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
+  border-color: var(--primary-color);
 }
 
 .crop-image-card:hover {

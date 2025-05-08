@@ -2,7 +2,6 @@
   <div class="home">
     <div class="jumbotron bg-light p-5 rounded mb-4">
       <h1 class="display-4 text-success">Welcome to AquaGreen</h1>
-      <p class="lead">Greenhouse Management & Data Processing System</p>
       <hr class="my-4">
       <p>Upload your Excel files, process data, and visualize greenhouse metrics in one place.</p>
       <router-link to="/upload" class="btn btn-success btn-lg">Upload Excel File</router-link>
@@ -48,8 +47,8 @@
 
     <div class="row mt-4">
       <div class="col-md-6 mb-4">
-        <div class="card h-100 border-primary">
-          <div class="card-header bg-primary text-white">
+        <div class="card h-100 border-success">
+          <div class="card-header bg-success text-white">
             <h5 class="card-title mb-0">Crop Image Management</h5>
           </div>
           <div class="card-body">
@@ -59,14 +58,14 @@
               <li>Associate images with CSV mapping files</li>
               <li>Add detailed metadata to each image</li>
             </ul>
-            <router-link to="/crop-images" class="btn btn-outline-primary">Manage Crop Images</router-link>
+            <router-link to="/crop-images" class="btn btn-outline-success">Manage Crop Images</router-link>
           </div>
         </div>
       </div>
       
       <div class="col-md-6 mb-4">
-        <div class="card h-100 border-info">
-          <div class="card-header bg-info text-white">
+        <div class="card h-100 border-success">
+          <div class="card-header bg-success text-white">
             <h5 class="card-title mb-0">CSV Mapping Files</h5>
           </div>
           <div class="card-body">
@@ -76,7 +75,7 @@
               <li>Process and extract metadata automatically</li>
               <li>Link CSV files to multiple crop images</li>
             </ul>
-            <router-link to="/csv-files" class="btn btn-outline-info">Manage CSV Files</router-link>
+            <router-link to="/csv-files" class="btn btn-outline-success">Manage CSV Files</router-link>
           </div>
         </div>
       </div>

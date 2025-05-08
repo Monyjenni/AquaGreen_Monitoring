@@ -1,6 +1,11 @@
 <template>
   <div class="csv-files-view">
-    <h2 class="mb-4">CSV File Management</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>CSV File Management</h2>
+      <router-link to="/" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </router-link>
+    </div>
     
     <div class="row mb-4">
       <div class="col-md-6">

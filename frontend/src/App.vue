@@ -40,7 +40,7 @@
 
     <footer v-if="isAuthenticated" class="footer mt-5 py-3 bg-light">
       <div class="container text-center">
-        <span class="text-muted">AquaGreen Greenhouse Management System &copy; {{ new Date().getFullYear() }}</span>
+        <span class="text-muted">AquaGreen Monitoring Website &copy; {{ new Date().getFullYear() }}</span>
       </div>
     </footer>
   </div>
@@ -142,5 +142,25 @@ body {
 .form-control:focus {
   border-color: var(--accent-color);
   box-shadow: 0 0 0 0.25rem rgba(117, 183, 152, 0.25);
+}
+
+/* Back button styles */
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  color: var(--primary-color);
+  text-decoration: none;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.back-button i {
+  margin-right: 0.5rem;
+}
+
+.back-button:hover {
+  color: var(--secondary-color);
+  text-decoration: underline;
 }
 </style>

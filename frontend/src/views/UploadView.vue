@@ -1,5 +1,6 @@
 <template>
   <div class="upload-view">
+    <BackButton />
     <h1 class="text-success mb-4">Upload Greenhouse Data</h1>
     
     <BaseCard class="mb-4">
@@ -113,12 +114,14 @@ import { mapState, mapActions } from 'vuex';
 import * as XLSX from 'xlsx';
 import BaseButton from '@/components/common/BaseButton.vue';
 import BaseCard from '@/components/common/BaseCard.vue';
+import BackButton from '@/components/common/BackButton.vue';
 
 export default {
   name: 'UploadView',
   components: {
     BaseButton,
-    BaseCard
+    BaseCard,
+    BackButton
   },
   data() {
     return {
@@ -199,36 +202,18 @@ export default {
     },
     async uploadFile() {
       if (!this.file) {
-        this.fileError = 'Please select a file to upload';
         return;
       }
       
+      const formData = new FormData();
+      formData.append('title', this.title);
+      formData.append('file', this.file);
+      
       try {
-        console.log('Starting file upload...');
-        const response = await this.$store.dispatch('uploadFile', {
-          title: this.title,
-          file: this.file
-        });
-        
-        console.log('Upload successful:', response);
-        
-        // Reset form
-        this.title = '';
-        this.file = null;
-        document.getElementById('file').value = '';
-        
-        // Show success message
-        this.$toast.success('File uploaded successfully');
-        
-        // Wait a moment to ensure files are fetched before navigation
-        setTimeout(() => {
-          // Redirect to files page
-          console.log('Redirecting to files page...');
-          this.$router.push('/files');
-        }, 500);
+        await this.$store.dispatch('uploadFile', formData);
+        this.$router.push('/files');
       } catch (error) {
-        console.error('Upload error in component:', error);
-        this.fileError = error.message || 'Failed to upload file';
+        // Error will be handled by the store and displayed in the app
       }
     }
   }
@@ -236,9 +221,13 @@ export default {
 </script>
 
 <style scoped>
-.card {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
+.upload-view h1 {
+  margin-bottom: 2rem;
+}
+
+.form-text {
+  font-size: 0.85rem;
+  color: #6c757d;
 }
 
 .list-group-item {

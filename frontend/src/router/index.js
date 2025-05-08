@@ -33,6 +33,24 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/crop-images',
+    name: 'crop-images',
+    component: () => import('../views/CropImagesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/crop-images/:id',
+    name: 'crop-image-detail',
+    component: () => import('../views/CropImageDetailView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/csv-files',
+    name: 'csv-files',
+    component: () => import('../views/CsvFilesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'login',
     component: LoginView,

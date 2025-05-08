@@ -47,20 +47,36 @@
     </div>
 
     <div class="row mt-4">
-      <div class="col-12">
-        <div class="card border-success">
-          <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">About AquaGreen</h5>
+      <div class="col-md-6 mb-4">
+        <div class="card h-100 border-primary">
+          <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Crop Image Management</h5>
           </div>
           <div class="card-body">
-            <p>AquaGreen is a comprehensive greenhouse management system that helps you:</p>
-            <ul>
-              <li>Upload and process Excel data files from your greenhouse sensors</li>
-              <li>Automatically extract and organize data without predefined column structures</li>
-              <li>Visualize key metrics and trends in your greenhouse environment</li>
-              <li>Make data-driven decisions to optimize your greenhouse operations</li>
+            <p class="card-text">Upload, view, and manage crop images with metadata tracking.</p>
+            <ul class="mb-3">
+              <li>Upload multiple crop images at once</li>
+              <li>Associate images with CSV mapping files</li>
+              <li>Add detailed metadata to each image</li>
             </ul>
-            <p>Our system uses advanced data processing techniques to handle various Excel formats and provide meaningful insights for your greenhouse management needs.</p>
+            <router-link to="/crop-images" class="btn btn-outline-primary">Manage Crop Images</router-link>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6 mb-4">
+        <div class="card h-100 border-info">
+          <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">CSV Mapping Files</h5>
+          </div>
+          <div class="card-body">
+            <p class="card-text">Upload and process CSV mapping files for crop metadata.</p>
+            <ul class="mb-3">
+              <li>Create structured CSV templates for crop data</li>
+              <li>Process and extract metadata automatically</li>
+              <li>Link CSV files to multiple crop images</li>
+            </ul>
+            <router-link to="/csv-files" class="btn btn-outline-info">Manage CSV Files</router-link>
           </div>
         </div>
       </div>

@@ -71,6 +71,12 @@
                     <span v-if="processingFile === file.id" class="spinner-border spinner-border-sm me-1"></span>
                     Process
                   </button>
+                  <button 
+                    class="btn btn-sm btn-outline-danger" 
+                    @click="confirmDeleteFile(file)"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -113,7 +119,7 @@ export default {
     this.loadFiles()
   },
   methods: {
-    ...mapActions(['fetchFiles', 'processFile']),
+    ...mapActions(['fetchFiles', 'processFile', 'deleteFile']),
     async loadFiles() {
       try {
         console.log('Fetching files...');
@@ -139,6 +145,18 @@ export default {
         console.error('Error processing file:', error)
       } finally {
         this.processingFile = null
+      }
+    },
+    async confirmDeleteFile(file) {
+      if (confirm(`Are you sure you want to delete ${file.title}?`)) {
+        try {
+          await this.$store.dispatch('deleteFile', file.id)
+          await this.fetchFiles()
+          this.$toast.success('File deleted successfully')
+        } catch (error) {
+          this.$toast.error('Failed to delete file')
+          console.error('Error deleting file:', error)
+        }
       }
     },
     formatDate(dateString) {

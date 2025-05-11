@@ -69,6 +69,9 @@ export default createStore({
       localStorage.removeItem('token')
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
+    },
+    removeFile(state, fileId) {
+      state.files = state.files.filter(file => file.id !== fileId)
     }
   },
   actions: {
@@ -205,44 +208,38 @@ export default createStore({
       commit('setLoading', true)
       commit('setError', null)
       
-      // Validate fileId before making API call
-      if (!fileId || fileId === 'undefined' || fileId === 'null') {
-        console.error('Invalid file ID:', fileId);
-        commit('setCurrentFile', null);
-        commit('setLoading', false);
-        return Promise.resolve(null);
-      }
-      
-      console.log('Fetching file details for ID:', fileId);
       const headers = getters.isAuthenticated ? { Authorization: `Bearer ${getters.getAuthToken}` } : {}
       
-      return axios.get(`${API_URL}/excel-files/${fileId}/`, { headers })
+      // Try the detail endpoint first, but fall back to standard endpoint if it fails
+      return axios.get(`${API_URL}/excel-files/${fileId}/detail/`, { headers })
         .then(response => {
-          console.log('File details response:', response);
-          commit('setCurrentFile', response.data);
-          return response.data;
+          commit('setCurrentFile', response.data)
+          return response.data
         })
         .catch(error => {
-          console.error('Error fetching file details:', error.response?.data || error);
-          commit('setError', error.response?.data || 'Failed to fetch file details');
-          commit('setCurrentFile', null);
-          return null;
+          console.warn('Detail endpoint failed, trying standard endpoint:', error.message)
+          // If detail endpoint fails, try the standard endpoint
+          return axios.get(`${API_URL}/excel-files/${fileId}/`, { headers })
+            .then(response => {
+              commit('setCurrentFile', response.data)
+              return response.data
+            })
+            .catch(secondError => {
+              console.error('Error fetching file details:', secondError.response?.data || secondError)
+              commit('setError', secondError.response?.data?.error || 'Failed to fetch file details')
+              throw secondError
+            })
         })
         .finally(() => {
-          commit('setLoading', false);
+          commit('setLoading', false)
         })
     },
     
-    uploadFile({ commit, getters, dispatch }, { title, file }) {
+    uploadFile({ commit, getters, dispatch }, formData) {
       commit('setLoading', true)
       commit('setError', null)
       
-      const formData = new FormData()
-      formData.append('title', title)
-      formData.append('file', file)
-      
       const headers = { 
-        'Content-Type': 'multipart/form-data',
         ...(getters.isAuthenticated ? { Authorization: `Bearer ${getters.getAuthToken}` } : {})
       }
       
@@ -251,11 +248,16 @@ export default createStore({
           console.log('File upload response:', response.data)
           // After successful upload, refresh the files list
           dispatch('fetchFiles')
-          return response.data
+          
+          // Return the response data with additional info for navigation
+          return {
+            ...response.data,
+            uploadSuccess: true
+          }
         })
         .catch(error => {
-          console.error('Upload error:', error.response?.data || error)
-          commit('setError', error.response?.data || 'Failed to upload file')
+          console.error('Error uploading file:', error.response?.data || error)
+          commit('setError', error.response?.data?.error || 'Failed to upload file')
           throw error
         })
         .finally(() => {
@@ -321,6 +323,52 @@ export default createStore({
         })
         .finally(() => {
           commit('setLoading', false);
+        })
+    },
+    
+    deleteFile({ commit, getters }, fileId) {
+      commit('setLoading', true)
+      commit('setError', null)
+      
+      const headers = getters.isAuthenticated ? { Authorization: `Bearer ${getters.getAuthToken}` } : {}
+      
+      return axios.delete(`${API_URL}/excel-files/${fileId}/`, { headers })
+        .then(response => {
+          // Remove the file from local state
+          commit('removeFile', fileId)
+          // Reset current file if it's the one being deleted
+          if (getters.getCurrentFile && getters.getCurrentFile.id === fileId) {
+            commit('setCurrentFile', null)
+          }
+          return response.data
+        })
+        .catch(error => {
+          console.error('Error deleting file:', error.response?.data || error)
+          commit('setError', error.response?.data?.error || error.response?.data || 'Failed to delete file')
+          throw error
+        })
+        .finally(() => {
+          commit('setLoading', false)
+        })
+    },
+    
+    fetchUserProfile({ commit, getters }) {
+      commit('setLoading', true)
+      commit('setError', null)
+      
+      const headers = getters.isAuthenticated ? { Authorization: `Bearer ${getters.getAuthToken}` } : {}
+      
+      return axios.get(`${API_URL}/auth/profile/`, { headers })
+        .then(response => {
+          return response.data
+        })
+        .catch(error => {
+          console.error('Error fetching user profile:', error.response?.data || error)
+          commit('setError', error.response?.data?.error || error.response?.data || 'Failed to fetch user profile')
+          return Promise.reject(error)
+        })
+        .finally(() => {
+          commit('setLoading', false)
         })
     }
   }

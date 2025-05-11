@@ -1,5 +1,5 @@
 <template>
-  <button @click="goBack" class="btn btn-outline-secondary">
+  <button @click="goBack" class="btn btn-outline-secondary back-button">
     <i class="bi bi-arrow-left me-1"></i> Back
   </button>
 </template>
@@ -20,3 +20,13 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+</style>

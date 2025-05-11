@@ -57,10 +57,22 @@ const routes = [
     meta: { guest: true }
   },
   {
-    path: '/register',
+    path: '/signup',
     name: 'register',
     component: RegisterView,
     meta: { guest: true }
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('../views/ProfileView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/visualizations',
+    name: 'visualizations',
+    component: () => import('../views/DataVisualizationView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

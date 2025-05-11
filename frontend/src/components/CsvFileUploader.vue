@@ -33,7 +33,7 @@
         <div class="d-grid gap-2">
           <button 
             type="submit" 
-            class="btn btn-primary" 
+            class="btn btn-success" 
             :disabled="!selectedFile || loading"
           >
             <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
@@ -91,14 +91,18 @@ export default {
       if (!this.selectedFile) return;
       
       try {
-        const fileData = await this.uploadCsvFile({
-          title: this.title,
-          file: this.selectedFile
-        });
+        const formData = new FormData();
+        formData.append('title', this.title);
+        formData.append('file', this.selectedFile);
+        
+        const fileData = await this.uploadCsvFile(formData);
         
         this.uploadSuccess = true;
         this.uploadedFileId = fileData.id;
         this.$emit('file-uploaded', fileData);
+        
+        // Display success toast
+        this.$toast?.success('CSV file uploaded successfully!');
         
         // Reset form for next upload
         this.resetForm();

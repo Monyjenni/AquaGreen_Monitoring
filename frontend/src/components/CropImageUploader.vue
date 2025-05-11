@@ -6,7 +6,10 @@
     <div class="card-body">
       <form @submit.prevent="uploadImages">
         <div class="mb-3">
-          <label for="csvFile" class="form-label">CSV Mapping File</label>
+          <label for="csvFile" class="form-label">
+            CSV Mapping File
+            <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Choose a CSV file that contains sample IDs and metadata for your crop images."></i>
+          </label>
           <select 
             class="form-select" 
             id="csvFile" 
@@ -15,10 +18,10 @@
           >
             <option value="">Select a CSV mapping file</option>
             <option v-for="file in csvFiles" :key="file.id" :value="file.id">
-              {{ file.title }}
+              {{ file.title }} ({{ formatDate(file.uploaded_at) }})
             </option>
           </select>
-          <div class="form-text">Select a CSV file to associate with these images.</div>
+          <div class="form-text">This links your images to sample IDs and metadata in the CSV file.</div>
         </div>
         
         <div class="mb-3">
@@ -75,7 +78,7 @@
         <div class="d-grid gap-2">
           <button 
             type="submit" 
-            class="btn btn-primary" 
+            class="btn btn-success" 
             :disabled="!selectedFiles.length || !selectedCsvId || uploading"
           >
             <span v-if="uploading" class="spinner-border spinner-border-sm me-2" role="status"></span>
@@ -143,11 +146,16 @@ export default {
           }
         }, 300);
         
-        const result = await this.uploadCropImages({
-          csvFileId: this.selectedCsvId,
-          images: this.selectedFiles,
-          sampleIdPrefix: this.sampleIdPrefix
+        const formData = new FormData();
+        formData.append('csv_file', this.selectedCsvId);
+        formData.append('sample_id_prefix', this.sampleIdPrefix);
+        
+        // Append all image files
+        this.selectedFiles.forEach(file => {
+          formData.append('images', file);
         });
+        
+        const result = await this.uploadCropImages(formData);
         
         clearInterval(progressInterval);
         this.uploadProgress = 100;
@@ -155,6 +163,9 @@ export default {
         this.uploadSuccess = true;
         this.uploadedFiles = result.images ? result.images.length : 0;
         this.$emit('images-uploaded', result);
+        
+        // Display success toast
+        this.$toast?.success(`${this.uploadedFiles} images uploaded successfully!`);
         
         // Reset form for next upload
         this.resetForm();
@@ -179,6 +190,11 @@ export default {
       if (bytes < 1024) return bytes + ' B';
       else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
       else return (bytes / 1048576).toFixed(1) + ' MB';
+    },
+    
+    formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
     }
   }
 }

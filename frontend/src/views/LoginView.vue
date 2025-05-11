@@ -35,7 +35,7 @@
           </button>
         </form>
         <div class="mt-3 text-center">
-          <p>Don't have an account? <router-link to="/register" class="text-success">Sign up</router-link></p>
+          <p>Don't have an account? <router-link to="/signup" class="text-success">Sign up</router-link></p>
         </div>
       </div>
     </div>

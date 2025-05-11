@@ -36,10 +36,16 @@
         </div>
         
         <div v-if="fileError" class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
           {{ fileError }}
         </div>
         <div v-if="previewError" class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
           {{ previewError }}
+        </div>
+        <div v-if="error" class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          {{ typeof error === 'object' ? Object.values(error).flat().join(', ') : error }}
         </div>
         <div class="d-flex gap-2 mb-3">
           <BaseButton 
@@ -86,11 +92,7 @@
       <ul class="list-group list-group-flush mb-3">
         <li class="list-group-item bg-light">
           <i class="bi bi-check-circle-fill text-success me-2"></i>
-          Ensure your Excel file contains greenhouse sensor data in a structured format
-        </li>
-        <li class="list-group-item">
-          <i class="bi bi-check-circle-fill text-success me-2"></i>
-          Our system automatically detects and processes all columns in your Excel file
+          Ensure your Excel file contains greenhouse data in a structured format
         </li>
         <li class="list-group-item bg-light">
           <i class="bi bi-check-circle-fill text-success me-2"></i>
@@ -130,7 +132,9 @@ export default {
       fileError: null,
       previewData: [],
       previewLoading: false,
-      previewError: null
+      previewError: null,
+      isUploading: false,
+      uploadProgress: 0,
     };
   },
   computed: {
@@ -202,18 +206,59 @@ export default {
     },
     async uploadFile() {
       if (!this.file) {
+        this.$toast?.error('Please select a file to upload');
         return;
       }
-      
-      const formData = new FormData();
-      formData.append('title', this.title);
-      formData.append('file', this.file);
+
+      // Check if file is empty
+      if (this.file.size === 0) {
+        this.$toast?.error('File is empty. Please select a valid file.');
+        return;
+      }
+
+      this.isUploading = true;
+      this.uploadProgress = 0;
       
       try {
-        await this.$store.dispatch('uploadFile', formData);
-        this.$router.push('/files');
+        const formData = new FormData();
+        formData.append('title', this.title);
+        formData.append('file', this.file);
+        
+        const response = await this.$store.dispatch('uploadFile', formData);
+        
+        // Handle success
+        this.$toast?.success('File uploaded successfully');
+        
+        // Navigate directly to the file detail view instead of the files list
+        if (response && response.id) {
+          this.$router.push(`/files/${response.id}`);
+        } else {
+          this.$router.push('/files');
+        }
       } catch (error) {
-        // Error will be handled by the store and displayed in the app
+        // Handle error
+        console.error('Upload error:', error.response?.data || error);
+        
+        // Display structured error messages
+        if (error.response?.data?.error) {
+          this.$toast?.error(`Error: ${error.response.data.error}`);
+        } else if (error.response?.data?.detail) {
+          this.$toast?.error(`Error: ${error.response.data.detail}`);
+        } else if (error.response?.data) {
+          // If it's an object with multiple errors
+          if (typeof error.response.data === 'object') {
+            const errorMsg = Object.entries(error.response.data)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join(', ');
+            this.$toast?.error(`Validation errors: ${errorMsg}`);
+          } else {
+            this.$toast?.error(`Error: ${error.response.data}`);
+          }
+        } else {
+          this.$toast?.error('Failed to upload file. Please try again.');
+        }
+      } finally {
+        this.isUploading = false;
       }
     }
   }

@@ -199,21 +199,11 @@ const cropModule = {
         })
     },
     
-    uploadCropImages({ commit, rootGetters }, { csvFileId, images, sampleIdPrefix }) {
+    uploadCropImages({ commit, rootGetters }, formData) {
       commit('setLoading', true)
       commit('setError', null)
       
-      const formData = new FormData()
-      formData.append('csv_file', csvFileId)
-      if (sampleIdPrefix) formData.append('sample_id_prefix', sampleIdPrefix)
-      
-      // Append multiple images
-      images.forEach(image => {
-        formData.append('images', image)
-      })
-      
       const headers = {
-        'Content-Type': 'multipart/form-data',
         ...(rootGetters.isAuthenticated ? { Authorization: `Bearer ${rootGetters.getAuthToken}` } : {})
       }
       

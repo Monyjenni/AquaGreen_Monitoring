@@ -24,33 +24,112 @@
       </div>
 
       <div class="card mb-4">
-        <div class="card-header bg-light">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0">File Information</h5>
+          <div>
+            <button @click="confirmDeleteFile" class="btn btn-sm btn-outline-danger ms-2">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </div>
+          <span 
+            :class="currentFile.processed ? 'badge bg-success' : 'badge bg-warning text-dark'"
+          >
+            {{ currentFile.processed ? 'Processed' : 'Pending' }}
+          </span>
         </div>
         <div class="card-body">
           <div class="row">
             <div class="col-md-6">
-              <p><strong>Upload Date:</strong> {{ formatDate(currentFile.uploaded_at) }}</p>
-              <p><strong>Status:</strong> 
-                <span 
-                  :class="currentFile.processed ? 'badge bg-success' : 'badge bg-warning text-dark'"
-                >
-                  {{ currentFile.processed ? 'Processed' : 'Pending' }}
-                </span>
-              </p>
+              <ul class="list-group">
+                <li class="list-group-item"><strong>File Name:</strong> {{ currentFile.title }}</li>
+                <li class="list-group-item"><strong>Upload Date:</strong> {{ formatDate(currentFile.uploaded_at) }}</li>
+                <li class="list-group-item"><strong>Uploaded By:</strong> {{ currentFile.uploaded_by?.username || 'Unknown' }}</li>
+              </ul>
             </div>
             <div class="col-md-6">
-              <p><strong>File ID:</strong> {{ currentFile.id }}</p>
-              <p v-if="!currentFile.processed">
-                <button 
-                  class="btn btn-sm btn-primary"
-                  @click="processFile(currentFile.id)"
-                  :disabled="processingFile"
-                >
-                  <span v-if="processingFile" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                  Process File
-                </button>
-              </p>
+              <ul class="list-group">
+                <li class="list-group-item"><strong>File Size:</strong> {{ formatFileSize(currentFile.file_size_in_bytes) }}</li>
+                <li class="list-group-item"><strong>File Type:</strong> {{ getFileExtension(currentFile.file) }}</li>
+                <li class="list-group-item">
+                  <div v-if="!currentFile.processed" class="d-grid gap-2">
+                    <button 
+                      class="btn btn-success"
+                      @click="processFile(currentFile.id)"
+                      :disabled="processingFile"
+                    >
+                      <span v-if="processingFile" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                      {{ processingFile ? 'Processing...' : 'Process File' }}
+                    </button>
+                  </div>
+                  <div v-else>
+                    <span class="text-success"><i class="bi bi-check-circle me-1"></i> Processed successfully</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Processing status and work in progress message -->
+      <div v-if="showProcessingMessage && !currentFile.processed" class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+          <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+          <div>
+            <strong>Work in progress:</strong> Processing your file. This may take a moment...
+          </div>
+        </div>
+      </div>
+
+      <!-- Processing result graph (simplified visualization) -->
+      <div v-if="currentFile.processed" class="card mb-4">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Data Analysis</h5>
+        </div>
+        <div class="card-body">
+          <!-- Simple summary stats -->
+          <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+              <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                  <h5 class="card-title">Rows</h5>
+                  <h3>{{ processedData?.length || 0 }}</h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 mb-3">
+              <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                  <h5 class="card-title">Columns</h5>
+                  <h3>{{ processedData && processedData[0] ? Object.keys(processedData[0]).length : 0 }}</h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 mb-3">
+              <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                  <h5 class="card-title">File Size</h5>
+                  <h3>{{ formatFileSize(currentFile.file_size_in_bytes) }}</h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 mb-3">
+              <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                  <h5 class="card-title">Processed</h5>
+                  <h3>{{ formatDate(currentFile.processed_at) || 'Yes' }}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bar chart for simple visualization -->
+          <div class="row">
+            <div class="col-md-6 mb-4">
+              <canvas ref="barChart"></canvas>
+            </div>
+            <div class="col-md-6 mb-4">
+              <canvas ref="pieChart"></canvas>
             </div>
           </div>
         </div>
@@ -67,10 +146,12 @@
         </div>
         <div class="card-body">
           <div v-if="!currentFile.processed && !processedData" class="alert alert-warning">
-            This file has not been processed yet. Click "Process File" to extract the data.
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            This file has not been processed yet. Click "Process File" above to extract the data.
           </div>
           
           <div v-else-if="!processedData || processedData.length === 0" class="alert alert-info">
+            <i class="bi bi-info-circle-fill me-2"></i>
             No processed data available for this file.
           </div>
           
@@ -156,6 +237,7 @@ export default {
   data() {
     return {
       processingFile: false,
+      showProcessingMessage: false,
       barChartOptions: {
         scales: {
           y: {
@@ -207,7 +289,10 @@ export default {
             'Equipment': 1100
           }
         }
-      }
+      },
+      barChartInstance: null,
+      pieChartInstance: null,
+      pollingInterval: null
     }
   },
   computed: {
@@ -360,9 +445,13 @@ export default {
   },
   mounted() {
     this.fetchFileData()
+    this.startDataPolling()
+  },
+  beforeUnmount() {
+    this.stopDataPolling()
   },
   methods: {
-    ...mapActions(['fetchFile', 'fetchProcessedData', 'processFile']),
+    ...mapActions(['fetchFile', 'fetchProcessedData', 'processFile', 'deleteFile']),
     fetchFileData() {
       // Get ID from route params
       const fileId = this.$route.params.id;
@@ -379,34 +468,76 @@ export default {
       this.$store.dispatch('fetchFile', fileId);
       this.$store.dispatch('fetchProcessedData', fileId);
     },
+    startDataPolling() {
+      // For newly uploaded files, poll for data availability a few times
+      const fileId = this.$route.params.id;
+      
+      // Only poll if we have a valid file ID and no polling is active
+      if (fileId && !this.pollingInterval) {
+        let attempts = 0;
+        
+        this.pollingInterval = setInterval(() => {
+          // Stop polling after 5 attempts or if data is loaded
+          if (attempts >= 5 || (this.currentFile && this.processedData && this.processedData.length > 0)) {
+            this.stopDataPolling();
+            return;
+          }
+          
+          console.log('Polling for data, attempt:', attempts + 1);
+          this.fetchFileData();
+          attempts++;
+        }, 2000); // Poll every 2 seconds
+      }
+    },
+    stopDataPolling() {
+      if (this.pollingInterval) {
+        clearInterval(this.pollingInterval);
+        this.pollingInterval = null;
+      }
+    },
     refreshData() {
       this.fetchFileData()
     },
     async processFile(fileId) {
-      this.processingFile = true
+      this.processingFile = true;
+      this.showProcessingMessage = true;
       
       try {
-        await this.$store.dispatch('processFile', fileId)
-        this.$toast.success('File processed successfully')
-        this.fetchFileData()
+        await this.$store.dispatch('processFile', fileId);
+        // Reload the file to get updated processed status
+        await this.$store.dispatch('fetchFile', fileId);
+        this.$toast?.success('File processed successfully');
+        
+        // Fetch the processed data
+        await this.fetchProcessedData();
+        
+        // Re-render the charts with the new data
+        this.$nextTick(() => {
+          this.generateDummyCharts();
+        });
       } catch (error) {
-        this.$toast.error('Failed to process file')
-        console.error('Error processing file:', error)
+        console.error('Error processing file:', error);
+        this.$toast?.error('Error processing file');
       } finally {
-        this.processingFile = false
+        // Keep the processing message visible for a moment
+        setTimeout(() => {
+          this.showProcessingMessage = false;
+          this.processingFile = false;
+        }, 1500);
       }
     },
     formatDate(dateString) {
-      if (!dateString) return ''
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    },
+    formatFileSize(bytes) {
+      if (!bytes || bytes === 0) return 'Empty file (0 Bytes)';
       
-      const date = new Date(dateString)
-      return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date)
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      
+      return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
     },
     formatColumnName(key) {
       if (!key) return ''
@@ -417,6 +548,12 @@ export default {
         .replace(/([A-Z])/g, ' $1')
         .replace(/^./, str => str.toUpperCase())
         .trim()
+    },
+    getFileExtension(file) {
+      if (!file) return ''
+      
+      const parts = file.split('.')
+      return parts[parts.length - 1].toUpperCase()
     },
     exportCSV() {
       if (!this.processedData || this.processedData.length === 0) {
@@ -456,6 +593,155 @@ export default {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+    },
+    generateDummyCharts() {
+      // Import Chart.js dynamically to avoid SSR issues
+      import('chart.js').then((Chart) => {
+        // Wait for the next tick to ensure DOM is updated
+        this.$nextTick(() => {
+          try {
+            // Create bar chart
+            if (this.$refs.barChart) {
+              // Destroy existing chart instance if it exists
+              if (this.barChartInstance && typeof this.barChartInstance.destroy === 'function') {
+                this.barChartInstance.destroy();
+              }
+              
+              // Generate dummy data based on the first few columns of processed data
+              const labels = [];
+              const data = [];
+              
+              if (this.processedData && this.processedData.length > 0) {
+                // Get first 5 rows for sample data
+                const sampleData = this.processedData.slice(0, 5);
+                const keys = Object.keys(sampleData[0]).slice(0, 5); // First 5 fields
+                
+                // Use first column as labels (often dates, IDs, etc)
+                sampleData.forEach(row => {
+                  labels.push(row[keys[0]]);
+                });
+                
+                // Use second column as data values if it's numeric
+                sampleData.forEach(row => {
+                  const val = row[keys[1]];
+                  data.push(isNaN(val) ? Math.floor(Math.random() * 100) : parseFloat(val));
+                });
+              } else {
+                // If no data, use dummy values
+                labels.push('Sample 1', 'Sample 2', 'Sample 3', 'Sample 4', 'Sample 5');
+                data.push(65, 59, 80, 81, 56);
+              }
+
+              // Ensure the canvas element exists and has dimensions
+              const barCanvas = this.$refs.barChart;
+              if (!barCanvas || barCanvas.offsetWidth === 0 || barCanvas.offsetHeight === 0) {
+                console.warn('Bar chart canvas not properly initialized');
+                return;
+              }
+              
+              // Create the chart
+              this.barChartInstance = new Chart.default(barCanvas, {
+                type: 'bar',
+                data: {
+                  labels: labels,
+                  datasets: [{
+                    label: 'Sample Data',
+                    data: data,
+                    backgroundColor: '#198754',
+                    borderColor: '#157347',
+                    borderWidth: 1
+                  }]
+                },
+                options: this.barChartOptions
+              });
+            }
+            
+            // Create pie chart with similar safety checks
+            if (this.$refs.pieChart) {
+              // Destroy existing chart instance if it exists
+              if (this.pieChartInstance && typeof this.pieChartInstance.destroy === 'function') {
+                this.pieChartInstance.destroy();
+              }
+              
+              // Ensure the canvas element exists and has dimensions
+              const pieCanvas = this.$refs.pieChart;
+              if (!pieCanvas || pieCanvas.offsetWidth === 0 || pieCanvas.offsetHeight === 0) {
+                console.warn('Pie chart canvas not properly initialized');
+                return;
+              }
+              
+              // Generate dummy data for pie chart
+              let pieLabels = [];
+              let pieData = [];
+              
+              if (this.processedData && this.processedData.length > 0) {
+                // Get unique values from third column if available
+                const keys = Object.keys(this.processedData[0]);
+                if (keys.length >= 3) {
+                  const categoryField = keys[2];
+                  const categories = {};
+                  
+                  // Count occurrences of each category
+                  this.processedData.forEach(row => {
+                    const category = row[categoryField] || 'Unknown';
+                    categories[category] = (categories[category] || 0) + 1;
+                  });
+                  
+                  // Convert to arrays for chart
+                  pieLabels = Object.keys(categories);
+                  pieData = Object.values(categories);
+                } else {
+                  // Fallback to dummy categories
+                  pieLabels = ['Category A', 'Category B', 'Category C'];
+                  pieData = [300, 50, 100];
+                }
+              } else {
+                // If no data, use dummy values
+                pieLabels = ['Red', 'Blue', 'Yellow', 'Green', 'Purple'];
+                pieData = [12, 19, 3, 5, 2];
+              }
+              
+              // Random colors for pie segments
+              const backgroundColors = pieLabels.map(() => {
+                return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.7)`;
+              });
+              
+              // Create the chart
+              this.pieChartInstance = new Chart.default(pieCanvas, {
+                type: 'pie',
+                data: {
+                  labels: pieLabels,
+                  datasets: [{
+                    data: pieData,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 1
+                  }]
+                },
+                options: this.pieChartOptions
+              });
+            }
+          } catch (error) {
+            console.error('Error creating charts:', error);
+          }
+        });
+      }).catch(error => {
+        console.error('Failed to load Chart.js:', error);
+      });
+    },
+    confirmDeleteFile() {
+      if (confirm(`Are you sure you want to delete the file "${this.currentFile.title}"?`)) {
+        this.deleteFile();
+      }
+    },
+    async deleteFile() {
+      try {
+        await this.$store.dispatch('deleteFile', this.currentFile.id);
+        this.$toast?.success('File deleted successfully');
+        this.$router.push('/files'); // Navigate back to files list
+      } catch (error) {
+        this.$toast?.error(`Error deleting file: ${error.response?.data?.error || 'Unknown error'}`);
+        console.error('Error deleting file:', error);
+      }
     }
   }
 }

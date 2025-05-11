@@ -1,11 +1,19 @@
 <template>
   <div id="app">
-    <nav v-if="isAuthenticated" class="navbar navbar-expand-lg navbar-dark bg-success mb-4">
+    <nav
+      v-if="isAuthenticated"
+      class="navbar navbar-expand-lg navbar-dark bg-success mb-4"
+    >
       <div class="container">
         <router-link class="navbar-brand" to="/">
           <span class="brand-name">Aqua<span class="text-light">Green</span></span>
         </router-link>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
@@ -19,54 +27,72 @@
             <li class="nav-item">
               <router-link class="nav-link" to="/files">Files</router-link>
             </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/visualizations">
+                <i class="bi bi-graph-up me-1"></i>Visualizations
+              </router-link>
+            </li>
           </ul>
           <div class="d-flex">
-            <span class="navbar-text me-3">
-              Welcome, {{ currentUser ? currentUser.username : 'User' }}
-            </span>
-            <button @click="logout" class="btn btn-outline-light btn-sm">Logout</button>
+            <router-link to="/profile" class="navbar-text me-3 text-light text-decoration-none">
+              Welcome, {{ currentUser ? currentUser.username : "User" }}
+            </router-link>
+            <button @click="handleLogout" class="btn btn-outline-light btn-sm">
+              Logout
+            </button>
           </div>
         </div>
       </div>
     </nav>
 
     <div class="container mt-4">
-      <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <div
+        v-if="error"
+        class="alert alert-danger alert-dismissible fade show"
+        role="alert"
+      >
         {{ error }}
         <button type="button" class="btn-close" @click="clearError"></button>
       </div>
-      <router-view/>
+      <router-view />
     </div>
 
     <footer v-if="isAuthenticated" class="footer mt-5 py-3 bg-light">
       <div class="container text-center">
-        <span class="text-muted">AquaGreen Monitoring Website &copy; {{ new Date().getFullYear() }}</span>
+        <span class="text-muted"
+          >AquaGreen Monitoring Website &copy; {{ new Date().getFullYear() }}</span
+        >
       </div>
     </footer>
   </div>
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
+import { mapState, mapActions } from "vuex";
 
 export default {
-  name: 'App',
+  name: "App",
   computed: {
-    ...mapState(['error']),
+    ...mapState(["error"]),
     isAuthenticated() {
       return this.$store.state.isAuthenticated;
     },
     currentUser() {
       return this.$store.state.user;
-    }
+    },
   },
   methods: {
-    ...mapActions(['logout']),
+    ...mapActions(["logout"]),
     clearError() {
-      this.$store.commit('setError', null);
-    }
-  }
-}
+      this.$store.commit("setError", null);
+    },
+    async handleLogout() {
+      await this.logout();
+      this.$toast?.success("You have been successfully logged out");
+      this.$router.push("/login");
+    },
+  },
+};
 </script>
 
 <style>
@@ -78,7 +104,7 @@ export default {
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: #f8f9fa;
   color: #333;
   min-height: 100vh;

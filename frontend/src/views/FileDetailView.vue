@@ -452,7 +452,7 @@ export default {
   },
   methods: {
     ...mapActions(['fetchFile', 'fetchProcessedData', 'processFile', 'deleteFile']),
-    fetchFileData() {
+    async fetchFileData() {
       // Get ID from route params
       const fileId = this.$route.params.id;
       
@@ -465,8 +465,38 @@ export default {
       }
       
       console.log('Fetching file data for ID:', fileId);
-      this.$store.dispatch('fetchFile', fileId);
-      this.$store.dispatch('fetchProcessedData', fileId);
+      
+      try {
+        // Show loading indicator
+        this.$store.commit('setLoading', true);
+        
+        // First fetch basic file information
+        await this.$store.dispatch('fetchFile', fileId);
+        
+        // Only fetch processed data if file is marked as processed
+        if (this.currentFile && this.currentFile.processed) {
+          try {
+            await this.$store.dispatch('fetchProcessedData', fileId);
+            
+            // Only attempt to generate charts if we have data
+            if (this.processedData && this.processedData.length > 0) {
+              // Small delay to ensure DOM is updated before chart generation
+              setTimeout(() => {
+                this.generateDummyCharts();
+              }, 200);
+            }
+          } catch (processedDataError) {
+            console.error('Error fetching processed data:', processedDataError);
+            this.$toast.error('Could not load processed data');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching file data:', error);
+        this.$toast.error(`Error loading file: ${error.response?.data?.error || error.message || 'Unknown error'}`);
+      } finally {
+        // Always ensure loading state is cleared
+        this.$store.commit('setLoading', false);
+      }
     },
     startDataPolling() {
       // For newly uploaded files, poll for data availability a few times
@@ -499,25 +529,66 @@ export default {
       this.fetchFileData()
     },
     async processFile(fileId) {
-      this.processingFile = true;
-      this.showProcessingMessage = true;
+      if (!fileId) {
+        fileId = this.currentFile?.id;
+      }
+      
+      if (!fileId) {
+        this.$toast?.error('No file selected for processing');
+        return;
+      }
       
       try {
-        await this.$store.dispatch('processFile', fileId);
-        // Reload the file to get updated processed status
-        await this.$store.dispatch('fetchFile', fileId);
+        // Show processing indicator
+        this.$store.commit('setLoading', true);
+        this.$toast?.info('Processing file, please wait...');
+        
+        // Process the file through the API
+        const response = await this.$store.dispatch('processFile', fileId);
         this.$toast?.success('File processed successfully');
         
-        // Fetch the processed data
-        await this.fetchProcessedData();
+        // Wait for the next tick to ensure UI is updated
+        await this.$nextTick();
         
-        // Re-render the charts with the new data
-        this.$nextTick(() => {
-          this.generateDummyCharts();
-        });
+        // Fetch updated file data including processed status
+        try {
+          await this.$store.dispatch('fetchFile', fileId);
+          
+          // Only fetch processed data if file is marked as processed
+          if (this.currentFile && this.currentFile.processed) {
+            // Add a small delay to ensure backend processing is complete
+            setTimeout(async () => {
+              try {
+                await this.$store.dispatch('fetchProcessedData', fileId);
+                
+                // Only generate charts if we have data
+                if (this.processedData && this.processedData.length > 0) {
+                  this.generateDummyCharts();
+                } else {
+                  console.warn('No processed data available for charts');
+                }
+              } catch (dataError) {
+                console.error('Error fetching processed data:', dataError);
+                this.$toast?.error('Could not load processed data. Please try again.');
+              } finally {
+                this.$store.commit('setLoading', false);
+              }
+            }, 1000);
+          } else {
+            this.$store.commit('setLoading', false);
+            console.warn('File is not marked as processed');
+          }
+        } catch (fetchError) {
+          this.$store.commit('setLoading', false);
+          console.error('Error fetching updated file data:', fetchError);
+          this.$toast?.error('Error refreshing file data');
+        }
+        
+        return response;
       } catch (error) {
+        this.$store.commit('setLoading', false);
+        this.$toast?.error(`Error processing file: ${error.response?.data?.error || error.message || 'Unknown error'}`);
         console.error('Error processing file:', error);
-        this.$toast?.error('Error processing file');
       } finally {
         // Keep the processing message visible for a moment
         setTimeout(() => {
@@ -596,10 +667,14 @@ export default {
     },
     generateDummyCharts() {
       // Import Chart.js dynamically to avoid SSR issues
-      import('chart.js').then((Chart) => {
+      import('chart.js').then((ChartModule) => {
         // Wait for the next tick to ensure DOM is updated
         this.$nextTick(() => {
           try {
+            // Get the correct Chart constructor from the module
+            // Handle different module formats (ESM vs CommonJS)
+            const Chart = ChartModule.Chart || ChartModule.default || ChartModule;
+
             // Create bar chart
             if (this.$refs.barChart) {
               // Destroy existing chart instance if it exists
@@ -639,8 +714,15 @@ export default {
                 return;
               }
               
+              // Make sure we have a valid 2D context before creating the chart
+              const ctx = barCanvas.getContext('2d');
+              if (!ctx) {
+                console.warn('Failed to get 2D context from bar chart canvas');
+                return;
+              }
+              
               // Create the chart
-              this.barChartInstance = new Chart.default(barCanvas, {
+              this.barChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                   labels: labels,
@@ -667,6 +749,13 @@ export default {
               const pieCanvas = this.$refs.pieChart;
               if (!pieCanvas || pieCanvas.offsetWidth === 0 || pieCanvas.offsetHeight === 0) {
                 console.warn('Pie chart canvas not properly initialized');
+                return;
+              }
+              
+              // Make sure we have a valid 2D context before creating the chart
+              const ctx = pieCanvas.getContext('2d');
+              if (!ctx) {
+                console.warn('Failed to get 2D context from pie chart canvas');
                 return;
               }
               
@@ -707,7 +796,7 @@ export default {
               });
               
               // Create the chart
-              this.pieChartInstance = new Chart.default(pieCanvas, {
+              this.pieChartInstance = new Chart(ctx, {
                 type: 'pie',
                 data: {
                   labels: pieLabels,

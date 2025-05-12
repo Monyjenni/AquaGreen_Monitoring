@@ -269,18 +269,35 @@ export default createStore({
       commit('setLoading', true)
       commit('setError', null)
       
+      // Validate fileId before making API call
+      if (!fileId || fileId === 'undefined' || fileId === 'null') {
+        console.error('Invalid file ID for processing:', fileId);
+        commit('setError', 'Invalid file ID');
+        commit('setLoading', false);
+        return Promise.reject(new Error('Invalid file ID'));
+      }
+      
       const headers = getters.isAuthenticated ? { Authorization: `Bearer ${getters.getAuthToken}` } : {}
       
-      return axios.post(`${API_URL}/excel-files/${fileId}/process/`, {}, { headers })
+      // Set a longer timeout for processing requests
+      const requestConfig = {
+        headers,
+        timeout: 60000 // 60 seconds timeout for processing
+      };
+      
+      return axios.post(`${API_URL}/excel-files/${fileId}/process/`, {}, requestConfig)
         .then(response => {
-          return response.data
+          console.log('File processing response:', response.data);
+          return response.data;
         })
         .catch(error => {
-          commit('setError', error.response?.data || 'Failed to process file')
-          throw error
+          const errorMessage = error.response?.data?.error || error.response?.data || 'Failed to process file';
+          console.error('Error processing file:', errorMessage);
+          commit('setError', errorMessage);
+          throw error;
         })
         .finally(() => {
-          commit('setLoading', false)
+          commit('setLoading', false);
         })
     },
     
@@ -299,28 +316,54 @@ export default createStore({
       console.log('Fetching processed data for file ID:', fileId);
       const headers = getters.isAuthenticated ? { Authorization: `Bearer ${getters.getAuthToken}` } : {}
       
-      return axios.get(`${API_URL}/processed-data/by_file/?file_id=${fileId}`, { headers })
-        .then(response => {
-          console.log('Processed data response:', response);
-          // Handle different response formats
-          if (response.data && response.data.success && response.data.data) {
-            commit('setProcessedData', response.data.data);
-            return response.data.data;
-          } else if (Array.isArray(response.data)) {
-            commit('setProcessedData', response.data);
-            return response.data;
-          } else {
-            console.warn('Unexpected processed data format:', response.data);
+      // Set a longer timeout for large data requests
+      const requestConfig = {
+        headers,
+        timeout: 30000 // 30 seconds timeout for large data
+      };
+      
+      // Create a retry function that can be called if the first attempt fails
+      const fetchWithRetry = (attempt = 1, maxAttempts = 3) => {
+        return axios.get(`${API_URL}/processed-data/by_file/?file_id=${fileId}`, requestConfig)
+          .then(response => {
+            console.log('Processed data response:', response);
+            // Handle different response formats
+            if (response.data && response.data.success && response.data.data) {
+              commit('setProcessedData', response.data.data);
+              return response.data.data;
+            } else if (Array.isArray(response.data)) {
+              commit('setProcessedData', response.data);
+              return response.data;
+            } else {
+              console.warn('Unexpected processed data format:', response.data);
+              commit('setProcessedData', []);
+              return [];
+            }
+          })
+          .catch(error => {
+            // If we haven't exhausted our retry attempts and the error is retriable
+            if (attempt < maxAttempts && (error.code === 'ECONNABORTED' || error.response?.status >= 500)) {
+              console.warn(`Retrying processed data fetch (attempt ${attempt+1}/${maxAttempts})...`);
+              // Exponential backoff for retries
+              const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+              
+              return new Promise(resolve => {
+                setTimeout(() => {
+                  resolve(fetchWithRetry(attempt + 1, maxAttempts));
+                }, backoffDelay);
+              });
+            }
+            
+            // If retries exhausted or error not retriable, handle the error
+            console.error('Error fetching processed data:', error.response?.data || error);
+            commit('setError', error.response?.data?.error || error.response?.data || 'Failed to fetch processed data');
             commit('setProcessedData', []);
             return [];
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching processed data:', error.response?.data || error);
-          commit('setError', error.response?.data?.error || error.response?.data || 'Failed to fetch processed data');
-          commit('setProcessedData', []);
-          return [];
-        })
+          });
+      };
+      
+      // Start the fetch with retry logic
+      return fetchWithRetry()
         .finally(() => {
           commit('setLoading', false);
         })

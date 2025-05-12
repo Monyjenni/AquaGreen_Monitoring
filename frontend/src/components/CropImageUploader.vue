@@ -18,7 +18,7 @@
           >
             <option value="">Select a CSV mapping file</option>
             <option v-for="file in csvFiles" :key="file.id" :value="file.id">
-              {{ file.title }} ({{ formatDate(file.uploaded_at) }})
+              {{ file.name || 'Unnamed File' }}
             </option>
           </select>
           <div class="form-text">This links your images to sample IDs and metadata in the CSV file.</div>
@@ -181,9 +181,23 @@ export default {
     
     resetForm() {
       this.selectedFiles = [];
+      this.uploadSuccess = false;
+      this.uploadedFiles = 0;
+      
       // Reset the file input by clearing its value
       const fileInput = document.getElementById('cropImages');
       if (fileInput) fileInput.value = '';
+      
+      // Force DOM update to ensure the file input is truly reset
+      this.$nextTick(() => {
+        const container = document.querySelector('.image-uploader');
+        if (container) {
+          container.style.opacity = '0.99';
+          setTimeout(() => {
+            if (container) container.style.opacity = '1';
+          }, 10);
+        }
+      });
     },
     
     formatFileSize(bytes) {

@@ -17,7 +17,7 @@
             <label for="csvFileFilter" class="form-label">CSV File</label>
             <select class="form-select" id="csvFileFilter" v-model="filters.csvFile">
               <option value="">All CSV Files</option>
-              <option v-for="file in csvFiles" :key="file.id" :value="file.id">{{ file.title }}</option>
+              <option v-for="file in csvFiles" :key="file.id" :value="file.id">{{ file.name }}</option>
             </select>
           </div>
           

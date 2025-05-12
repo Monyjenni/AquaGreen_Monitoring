@@ -72,7 +72,7 @@
           <table class="table table-hover">
             <thead class="table-light">
               <tr>
-                <th>Title</th>
+                <th>File Name</th>
                 <th>Uploaded</th>
                 <th>Images</th>
                 <th>Actions</th>
@@ -80,7 +80,7 @@
             </thead>
             <tbody>
               <tr v-for="file in csvFiles" :key="file.id">
-                <td>{{ file.title }}</td>
+                <td>{{ file.name }}</td>
                 <td>{{ formatDate(file.uploaded_at) }}</td>
                 <td>
                   <span class="badge bg-info rounded-pill">{{ file.crop_images_count || 0 }}</span>

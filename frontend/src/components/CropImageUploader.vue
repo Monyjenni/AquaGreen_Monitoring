@@ -161,7 +161,8 @@ export default {
         this.uploadProgress = 100;
         
         this.uploadSuccess = true;
-        this.uploadedFiles = result.images ? result.images.length : 0;
+        // Make sure we count uploaded images correctly
+        this.uploadedFiles = result?.images?.length || this.selectedFiles.length;
         this.$emit('images-uploaded', result);
         
         // Display success toast

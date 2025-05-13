@@ -1,6 +1,11 @@
 <template>
   <div class="files-view">
-    <h1 class="text-success mb-4">Greenhouse Data Files</h1>
+    <div class="mb-4">
+      <router-link to="/" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </router-link>
+      <h2 class="mt-3">Greenhouse Data Files</h2>
+    </div>
     
     <div v-if="loading" class="text-center my-5">
       <div class="spinner-border text-success" role="status">

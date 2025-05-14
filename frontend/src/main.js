@@ -6,6 +6,23 @@ import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap/dist/js/bootstrap.bundle.js'
 import axios from 'axios'
 
+// Clear login session when the app is first loaded
+// Using modern approach instead of deprecated navigation API
+const clearLoginSession = () => {
+  // Clear localStorage tokens to force login
+  localStorage.removeItem('token')
+  localStorage.removeItem('refreshToken')
+  localStorage.removeItem('user')
+  
+  // Also clear Vuex state
+  store?.commit('clearAuth')
+}
+
+// Check if this is a fresh page load (not a refresh)
+if (window.location.href.includes('://localhost:8080/')) {
+  clearLoginSession()
+}
+
 const app = createApp(App)
   .use(store)
   .use(router)

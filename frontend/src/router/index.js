@@ -81,9 +81,14 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard
 router.beforeEach((to, from, next) => {
   const isAuthenticated = store.getters.isAuthenticated
+  
+  // Redirect root path to login if not authenticated
+  if (to.path === '/' && !isAuthenticated) {
+    next({ name: 'login' })
+    return
+  }
   
   // Route requires authentication
   if (to.matched.some(record => record.meta.requiresAuth)) {

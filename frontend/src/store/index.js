@@ -413,6 +413,29 @@ export default createStore({
         .finally(() => {
           commit('setLoading', false)
         })
+    },
+    
+    updateProfileImage({ commit, getters }, formData) {
+      commit('setLoading', true)
+      commit('setError', null)
+      
+      const headers = { 
+        'Authorization': `Bearer ${getters.getAuthToken}`,
+        'Content-Type': 'multipart/form-data'
+      }
+      
+      return axios.patch(`${API_URL}/auth/profile/`, formData, { headers })
+        .then(response => {
+          return response.data
+        })
+        .catch(error => {
+          console.error('Error updating profile image:', error.response?.data || error)
+          commit('setError', error.response?.data?.error || error.response?.data || 'Failed to update profile image')
+          return Promise.reject(error)
+        })
+        .finally(() => {
+          commit('setLoading', false)
+        })
     }
   }
 })

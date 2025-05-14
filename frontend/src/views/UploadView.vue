@@ -1,7 +1,12 @@
 <template>
   <div class="upload-view">
     <BackButton />
-    <h1 class="text-success mb-4">Upload Greenhouse Data</h1>
+    <div class="mb-4">
+      <router-link to="/" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </router-link>
+      <h2 class="mt-3 text-success">Upload Greenhouse Data</h2>
+    </div>
     
     <BaseCard class="mb-4">
       <template #header>

@@ -18,7 +18,7 @@
           >
             <option value="">Select a CSV mapping file</option>
             <option v-for="file in csvFiles" :key="file.id" :value="file.id">
-              {{ file.title }} ({{ formatDate(file.uploaded_at) }})
+              {{ file.name || 'Unnamed File' }}
             </option>
           </select>
           <div class="form-text">This links your images to sample IDs and metadata in the CSV file.</div>
@@ -127,25 +127,46 @@ export default {
     ...mapActions('crop', ['fetchCsvFiles', 'uploadCropImages']),
     
     handleFileSelection(event) {
-      const files = Array.from(event.target.files);
-      this.selectedFiles = files;
+      const files = event.target.files;
+      if (!files.length) return;
+      
+      // Check file formats and warn if any might be problematic
+      const validImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      const invalidFiles = Array.from(files).filter(file => !validImageTypes.includes(file.type));
+      
+      if (invalidFiles.length > 0) {
+        console.warn('Warning: Some selected files may not be supported image formats:', invalidFiles.map(f => f.name));
+        this.$toast?.warning('Some files may not be in supported image formats. Try using JPG or PNG files.');
+      }
+      
+      // Convert FileList to array
+      this.selectedFiles = Array.from(files);
       this.uploadSuccess = false;
     },
     
     async uploadImages() {
-      if (!this.selectedFiles.length || !this.selectedCsvId) return;
-      
       this.uploading = true;
       this.uploadProgress = 0;
+      this.uploadSuccess = false;
+      
+      // Setup progress simulation
+      const progressInterval = setInterval(() => {
+        if (this.uploadProgress < 90) {
+          this.uploadProgress += 5;
+        }
+      }, 300);
       
       try {
-        // Simulating upload progress
-        const progressInterval = setInterval(() => {
-          if (this.uploadProgress < 90) {
-            this.uploadProgress += 10;
-          }
-        }, 300);
+        // Validate before upload
+        if (!this.selectedCsvId) {
+          throw new Error('Please select a CSV file first');
+        }
         
+        if (this.selectedFiles.length === 0) {
+          throw new Error('Please select at least one image to upload');
+        }
+        
+        // Create form data for upload
         const formData = new FormData();
         formData.append('csv_file', this.selectedCsvId);
         formData.append('sample_id_prefix', this.sampleIdPrefix);
@@ -160,12 +181,20 @@ export default {
         clearInterval(progressInterval);
         this.uploadProgress = 100;
         
-        this.uploadSuccess = true;
-        this.uploadedFiles = result.images ? result.images.length : 0;
-        this.$emit('images-uploaded', result);
-        
-        // Display success toast
-        this.$toast?.success(`${this.uploadedFiles} images uploaded successfully!`);
+        // Only mark as success if we actually got images back
+        if (result?.images?.length > 0) {
+          this.uploadSuccess = true;
+          this.uploadedFiles = result.images.length;
+          this.$emit('images-uploaded', result);
+          
+          // Display success toast
+          this.$toast?.success(`${this.uploadedFiles} images uploaded successfully!`);
+        } else {
+          // Even if server returns 200 but no images, treat as failure
+          console.error('Upload error: Server returned success but no images');
+          this.$toast?.error('Upload failed. No images were saved.');
+          this.uploadSuccess = false;
+        }
         
         // Reset form for next upload
         this.resetForm();
@@ -181,9 +210,23 @@ export default {
     
     resetForm() {
       this.selectedFiles = [];
+      this.uploadSuccess = false;
+      this.uploadedFiles = 0;
+      
       // Reset the file input by clearing its value
       const fileInput = document.getElementById('cropImages');
       if (fileInput) fileInput.value = '';
+      
+      // Force DOM update to ensure the file input is truly reset
+      this.$nextTick(() => {
+        const container = document.querySelector('.image-uploader');
+        if (container) {
+          container.style.opacity = '0.99';
+          setTimeout(() => {
+            if (container) container.style.opacity = '1';
+          }, 10);
+        }
+      });
     },
     
     formatFileSize(bytes) {

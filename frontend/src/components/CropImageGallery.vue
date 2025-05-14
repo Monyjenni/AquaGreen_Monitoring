@@ -17,7 +17,7 @@
             <label for="csvFileFilter" class="form-label">CSV File</label>
             <select class="form-select" id="csvFileFilter" v-model="filters.csvFile">
               <option value="">All CSV Files</option>
-              <option v-for="file in csvFiles" :key="file.id" :value="file.id">{{ file.title }}</option>
+              <option v-for="file in csvFiles" :key="file.id" :value="file.id">{{ file.name }}</option>
             </select>
           </div>
           
@@ -38,6 +38,9 @@
               <option value="">All Labels</option>
               <option v-for="label in metadataLabels" :key="label" :value="label">{{ label }}</option>
             </select>
+            <div v-if="metadataLabels.length === 0" class="text-danger small mt-1">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i> No metadata labels found
+            </div>
           </div>
           
           <div class="col-md-4" v-if="filters.metadataLabel">

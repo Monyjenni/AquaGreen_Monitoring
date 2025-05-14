@@ -105,13 +105,9 @@ const cropModule = {
         })
     },
     
-    uploadCsvFile({ commit, rootGetters }, { title, file }) {
+    uploadCsvFile({ commit, rootGetters }, formData) {
       commit('setLoading', true)
       commit('setError', null)
-      
-      const formData = new FormData()
-      formData.append('title', title)
-      formData.append('file', file)
       
       const headers = {
         'Content-Type': 'multipart/form-data',

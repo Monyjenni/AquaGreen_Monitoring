@@ -25,8 +25,21 @@
           
           <div v-else>
             <div class="text-center mb-4">
-              <div class="avatar-circle mb-3">
-                <span class="initials">{{ userInitials }}</span>
+              <div class="position-relative d-inline-block mb-3">
+                <div v-if="!user.profile_image_url" class="avatar-circle">
+                  <span class="initials">{{ userInitials }}</span>
+                </div>
+                <img v-else :src="user.profile_image_url" alt="Profile Image" class="rounded-circle profile-image" />
+                <button @click="triggerFileInput" class="btn btn-sm btn-outline-primary edit-photo-btn">
+                  <i class="bi bi-camera"></i>
+                </button>
+                <input
+                  type="file"
+                  ref="fileInput"
+                  @change="handleImageUpload"
+                  accept="image/*"
+                  class="d-none"
+                />
               </div>
               <h4>{{ user.username }}</h4>
               <p class="text-muted">{{ user.email }}</p>
@@ -34,6 +47,13 @@
                 <p class="mb-1"><i class="bi bi-calendar3"></i> Member since: {{ formatDate(user.date_joined) }}</p>
                 <p class="mb-0"><i class="bi bi-clock"></i> Last login: {{ formatDate(user.last_login) }}</p>
               </div>
+              <div v-if="uploadingImage" class="mt-2">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <span class="ms-1">Updating profile image...</span>
+              </div>
+              <div v-if="imageUploadError" class="text-danger mt-2 small">{{ imageUploadError }}</div>
             </div>
             
             <div class="row mt-4">
@@ -105,7 +125,9 @@ export default {
       stats: {
         fileCount: 0,
         processedCount: 0
-      }
+      },
+      uploadingImage: false,
+      imageUploadError: null
     };
   },
   computed: {
@@ -124,7 +146,6 @@ export default {
       try {
         // Fetch user profile
         const response = await this.$store.dispatch('fetchUserProfile');
-        console.log('User profile data:', response);
         
         // Directly set the user data from response
         this.user = {
@@ -156,6 +177,47 @@ export default {
         console.error('Error formatting date:', error);
         return 'N/A';
       }
+    },
+    triggerFileInput() {
+      this.$refs.fileInput.click();
+    },
+    async handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.imageUploadError = 'Image size should not exceed 5MB';
+        return;
+      }
+      
+      // Check file type
+      if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+        this.imageUploadError = 'Only JPEG, PNG and GIF images are supported';
+        return;
+      }
+      
+      this.uploadingImage = true;
+      this.imageUploadError = null;
+      
+      try {
+        const formData = new FormData();
+        formData.append('profile_image', file);
+        
+        // Call the API to update the profile image
+        const response = await this.$store.dispatch('updateProfileImage', formData);
+        
+        // Update the user data with the new profile image URL
+        this.user = {
+          ...this.user,
+          profile_image_url: response.profile_image_url
+        };
+      } catch (error) {
+        console.error('Error uploading profile image:', error);
+        this.imageUploadError = 'Failed to upload image. Please try again.';
+      } finally {
+        this.uploadingImage = false;
+      }
     }
   }
 };
@@ -170,12 +232,31 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0 auto;
 }
 
 .initials {
   font-size: 48px;
   color: white;
   font-weight: bold;
+}
+
+.profile-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+}
+
+.edit-photo-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  border-radius: 50%;
+  padding: 0.3rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
 }
 </style>

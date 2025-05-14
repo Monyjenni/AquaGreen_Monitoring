@@ -16,11 +16,11 @@
     </div>
 
     <div v-else>
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{{ currentFile.title }}</h1>
-        <router-link to="/files" class="btn btn-outline-secondary">
+      <div class="mb-4">
+        <router-link to="/files" class="btn btn-sm btn-outline-secondary">
           <i class="bi bi-arrow-left me-1"></i> Back to Files
         </router-link>
+        <h1 class="mt-3">{{ currentFile.title }}</h1>
       </div>
 
       <div class="card mb-4">
@@ -176,6 +176,7 @@
                     :options="barChartOptions"
                     description="Comparison of soil pH, moisture, temperature and EC"
                     initial-chart-type="bar"
+                    :showControls="false"
                   />
                 </div>
                 
@@ -187,6 +188,7 @@
                     :chart-data="plantHealthData"
                     :options="lineChartOptions"
                     description="Death plants count over time"
+                    :showControls="false"
                   />
                 </div>
                 
@@ -199,6 +201,7 @@
                     :options="pieChartOptions"
                     description="Income vs Expenses breakdown"
                     initial-chart-type="pie"
+                    :showControls="false"
                   />
                 </div>
                 
@@ -211,6 +214,7 @@
                     :options="pieChartOptions"
                     description="Distribution of soil pH levels"
                     initial-chart-type="pie"
+                    :showControls="false"
                   />
                 </div>
               </div>

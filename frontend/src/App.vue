@@ -69,9 +69,15 @@
 
 <script>
 import { mapState, mapActions } from "vuex";
+import { initSessionTimeout } from "./utils/sessionUtils";
 
 export default {
   name: "App",
+  data() {
+    return {
+      sessionTimeoutCleanup: null,
+    };
+  },
   computed: {
     ...mapState(["error"]),
     isAuthenticated() {
@@ -80,6 +86,27 @@ export default {
     currentUser() {
       return this.$store.state.user;
     },
+  },
+  watch: {
+    isAuthenticated(newValue) {
+      if (newValue) {
+        // User has logged in, start session timeout tracking
+        this.initializeSessionTimeout();
+      } else {
+        // User has logged out, clean up session timeout
+        this.cleanupSessionTimeout();
+      }
+    }
+  },
+  mounted() {
+    // Initialize session timeout if user is already authenticated
+    if (this.isAuthenticated) {
+      this.initializeSessionTimeout();
+    }
+  },
+  beforeUnmount() {
+    // Clean up session timeout when component is destroyed
+    this.cleanupSessionTimeout();
   },
   methods: {
     ...mapActions(["logout"]),
@@ -91,6 +118,23 @@ export default {
       this.$toast?.success("You have been successfully logged out");
       this.$router.push("/login");
     },
+    initializeSessionTimeout() {
+      // Clean up any existing session timeout first
+      this.cleanupSessionTimeout();
+      
+      // Initialize new session timeout with automatic logout
+      this.sessionTimeoutCleanup = initSessionTimeout(async () => {
+        await this.logout();
+        this.$router.push("/login");
+        this.$toast?.warning("Your session has expired due to inactivity.");
+      });
+    },
+    cleanupSessionTimeout() {
+      if (this.sessionTimeoutCleanup) {
+        this.sessionTimeoutCleanup();
+        this.sessionTimeoutCleanup = null;
+      }
+    }
   },
 };
 </script>

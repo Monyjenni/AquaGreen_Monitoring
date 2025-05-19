@@ -1,10 +1,14 @@
 <template>
-  <div class="crop-images-view">
+  <div class="crop-images-view-container">
+    <div class="crop-images-view">
     <div class="mb-4">
       <router-link to="/" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i> Back
       </router-link>
-      <h2 class="mt-3">Crop Image Management</h2>
+      <h2 class="mt-3 d-inline-block me-2">Crop Image Management</h2>
+      <button @click="showNamingGuide" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-info-circle me-1"></i> Naming Guide
+      </button>
     </div>
     
     <div class="row mb-4">
@@ -92,6 +96,10 @@
       </div>
     </div>
   </div>
+  
+    <!-- Naming Guide Modal -->
+    <naming-guide-modal ref="namingGuideModal" />
+  </div>
 </template>
 
 <script>
@@ -102,6 +110,7 @@ import CropImageUploader from '@/components/CropImageUploader.vue';
 import CsvFileUploader from '@/components/CsvFileUploader.vue';
 import CropImageGallery from '@/components/CropImageGallery.vue';
 import MetadataEditor from '@/components/MetadataEditor.vue';
+import NamingGuideModal from '@/components/NamingGuideModal.vue';
 
 export default {
   name: 'CropImagesView',
@@ -111,7 +120,8 @@ export default {
     CropImageUploader,
     CsvFileUploader,
     CropImageGallery,
-    MetadataEditor
+    MetadataEditor,
+    NamingGuideModal
   },
   data() {
     return {
@@ -175,6 +185,17 @@ export default {
     scrollToUploader() {
       // Scroll to the uploader section
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    
+    showNamingGuide() {
+      // Initialize Bootstrap modal if not already done
+      if (typeof bootstrap !== 'undefined' && this.$refs.namingGuideModal) {
+        const modalElement = document.getElementById('namingGuideModal');
+        if (modalElement) {
+          const modal = new bootstrap.Modal(modalElement);
+          modal.show();
+        }
+      }
     }
   }
 };

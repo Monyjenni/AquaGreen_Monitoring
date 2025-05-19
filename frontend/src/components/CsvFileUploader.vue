@@ -27,7 +27,7 @@
             accept=".csv"
             required
           >
-          <div class="form-text">Upload a CSV file with mapping information for crop images.</div>
+          <div class="form-text">Upload a CSV file containing sample IDs (like CROP_001, CROP_002) to match with your images.</div>
         </div>
         
         <div class="d-grid gap-2">
@@ -92,7 +92,7 @@ export default {
       
       try {
         const formData = new FormData();
-        formData.append('title', this.title);
+        formData.append('name', this.title); // Changed from 'title' to 'name' to match backend
         formData.append('file', this.selectedFile);
         
         const fileData = await this.uploadCsvFile(formData);
@@ -133,9 +133,20 @@ export default {
     resetForm() {
       this.title = '';
       this.selectedFile = null;
+      this.uploadSuccess = false;
       // Reset the file input by clearing its value
       const fileInput = document.getElementById('csvFile');
       if (fileInput) fileInput.value = '';
+      
+      // Wait one tick to ensure DOM updates
+      this.$nextTick(() => {
+        // Force re-render of the file input
+        const container = document.querySelector('.csv-uploader');
+        if (container) container.style.opacity = '0.99';
+        setTimeout(() => {
+          if (container) container.style.opacity = '1';
+        }, 10);
+      });
     }
   }
 }

@@ -27,7 +27,7 @@
             accept=".csv"
             required
           >
-          <div class="form-text">Upload a CSV file with mapping information for crop images.</div>
+          <div class="form-text">Upload a CSV file containing sample IDs (like CROP_001, CROP_002) to match with your images.</div>
         </div>
         
         <div class="d-grid gap-2">

@@ -29,6 +29,9 @@ const cropModule = {
     setCsvFiles(state, files) {
       state.csvFiles = files
     },
+    removeCsvFile(state, fileId) {
+      state.csvFiles = state.csvFiles.filter(file => file.id !== fileId)
+    },
     setCurrentCsvFile(state, file) {
       state.currentCsvFile = file
     },
@@ -128,22 +131,47 @@ const cropModule = {
         })
     },
     
-    processCsvFile({ commit, rootGetters }, fileId) {
+    processCsvFile({ commit }, fileId) {
       commit('setLoading', true)
-      commit('setError', null)
       
-      const headers = rootGetters.isAuthenticated ? { Authorization: `Bearer ${rootGetters.getAuthToken}` } : {}
-      
-      return axios.post(`${API_URL}/csv-files/${fileId}/process/`, {}, { headers })
+      return axios.post(`${API_URL}/csv-files/${fileId}/process/`)
         .then(response => {
+          commit('setLoading', false)
           return response.data
         })
         .catch(error => {
-          commit('setError', error.response?.data || 'Failed to process CSV file')
+          commit('setLoading', false)
+          commit('setError', error.response?.data || error.message)
           throw error
         })
-        .finally(() => {
+    },
+    
+    deleteCsvFile({ commit }, fileId) {
+      commit('setLoading', true)
+      
+      return axios.delete(`${API_URL}/csv-files/${fileId}/`)
+        .then(response => {
+          commit('removeCsvFile', fileId)
           commit('setLoading', false)
+          return { success: true, data: response.data }
+        })
+        .catch(error => {
+          commit('setLoading', false)
+          
+          // Extract meaningful error message from response
+          const errorMessage = error.response?.data?.error || 
+                             error.response?.data?.detail ||
+                             error.message || 
+                             'An error occurred while deleting the file';
+          
+          commit('setError', errorMessage)
+          
+          // Return structured error object instead of throwing
+          return { 
+            success: false, 
+            error: errorMessage,
+            linkedToImages: errorMessage.includes('linked to') 
+          }
         })
     },
     

@@ -1,5 +1,6 @@
 <template>
-  <div class="csv-files-view">
+  <div class="csv-files-container">
+    <div class="csv-files-view">
     <div class="mb-4">
       <router-link to="/" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i> Back
@@ -15,20 +16,20 @@
       </div>
       
       <div class="col-md-6">
-        <base-card title="CSV File Guidelines">
+        <base-card title="CSV Files Information">
           <div class="guidelines">
-            <h5>Creating Effective CSV Mapping Files</h5>
-            <p>Your CSV file should include these key columns:</p>
+            <h5>About CSV Mapping Files</h5>
+            <p>CSV files are used to link metadata to crop images:</p>
             <ul>
-              <li><strong>sample_id</strong> - Unique identifier for each crop sample</li>
-              <li><strong>description</strong> (optional) - Description of the crop image</li>
+              <li><strong>Required:</strong> A 'sample_id' column is required to match images</li>
+              <li><strong>Processing:</strong> After uploading, click 'Process' to analyze the file</li>
+              <li><strong>Delete:</strong> You can remove files that are no longer needed</li>
             </ul>
-            <p>Additional columns will be treated as metadata for the crop images.</p>
-            <p>Example format:</p>
-            <div class="csv-example p-2 rounded bg-light">
-              <code>sample_id,description,crop_type,plant_age,health_status</code><br>
-              <code>CROP_001,Young tomato plant,Tomato,14 days,Healthy</code><br>
-              <code>CROP_002,Mature lettuce,Lettuce,45 days,Pest damage</code>
+            
+            <div v-if="showDeletionWarning" class="alert alert-warning alert-dismissible fade show" role="alert">
+              <i class="bi bi-info-circle me-2"></i>
+              <strong>Note:</strong> CSV files linked to images cannot be deleted until the link is removed.
+              <button type="button" class="btn-close" @click="showDeletionWarning = false" aria-label="Close"></button>
             </div>
           </div>
         </base-card>
@@ -53,9 +54,8 @@
       </template>
       
       <div v-if="loading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
+        <div class="spinner-border text-primary" aria-hidden="true"></div>
+        <span class="visually-hidden">Loading...</span>
         <p class="mt-2 text-muted">Loading CSV files...</p>
       </div>
       
@@ -98,9 +98,11 @@
                       @click="processFile(file.id)"
                       :disabled="processing === file.id"
                     >
-                      <span v-if="processing === file.id" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                      <span v-if="processing === file.id" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                      <span v-if="processing === file.id" class="visually-hidden">Processing file...</span>
                       Process
                     </base-button>
+                    <!-- Delete button removed as requested -->
                   </div>
                 </td>
               </tr>
@@ -109,6 +111,31 @@
         </div>
       </div>
     </base-card>
+  </div>
+  
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" v-if="showDeleteConfirmation" tabindex="-1" style="display: block; background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirm Deletion</h5>
+          <button type="button" class="btn-close" aria-label="Close" @click="cancelDelete"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete the CSV file <strong>{{ fileToDelete?.name }}</strong>?</p>
+          <p class="text-danger">This action cannot be undone and may affect related crop images.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="cancelDelete">Cancel</button>
+          <button type="button" class="btn btn-danger" @click="deleteFile" :disabled="deleting">
+            <span v-if="deleting" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+            <span v-if="deleting" class="visually-hidden">Deleting file...</span>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
   </div>
 </template>
 
@@ -127,7 +154,11 @@ export default {
   },
   data() {
     return {
-      processing: null
+      processing: null,
+      fileToDelete: null,
+      showDeleteConfirmation: false,
+      deleting: false,
+      showDeletionWarning: true  // Show warning by default
     };
   },
   computed: {
@@ -143,7 +174,7 @@ export default {
     this.fetchCsvFiles();
   },
   methods: {
-    ...mapActions('crop', ['fetchCsvFiles', 'processCsvFile']),
+    ...mapActions('crop', ['fetchCsvFiles', 'processCsvFile', 'deleteCsvFile']),
     
     refreshFiles() {
       this.fetchCsvFiles();
@@ -183,9 +214,54 @@ export default {
     },
     
     formatDate(dateString) {
-      if (!dateString) return 'Unknown';
+      if (!dateString) return '';
       const date = new Date(dateString);
-      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleString();
+    },
+    
+    confirmDelete(file) {
+      this.fileToDelete = file;
+      this.showDeleteConfirmation = true;
+    },
+    
+    cancelDelete() {
+      this.fileToDelete = null;
+      this.showDeleteConfirmation = false;
+    },
+    
+    async deleteFile() {
+      this.deleting = true;
+      const result = await this.$store.dispatch('deleteCsvFile', this.fileToDelete.id);
+      
+      if (result.success) {
+        this.showDeleteConfirmation = false;
+        this.fileToDelete = null;
+        this.$toast.success('File deleted successfully');
+        // Refresh the list to ensure UI is synchronized with backend
+        this.refreshFiles();
+      } else {
+        console.error('Error deleting file:', result.error);
+        
+        // Show appropriate message based on error type
+        if (result.linkedToImages) {
+          // Make sure the warning is visible
+          this.showDeletionWarning = true;
+          
+          this.$toast.error(result.error, {
+            timeout: 6000  // Show longer for important messages
+          });
+          
+          // Navigate to related images to help the user unlink them
+          setTimeout(() => {
+            this.viewRelatedImages(this.fileToDelete.id);
+          }, 1500);
+        } else {
+          this.$toast.error(`Error deleting file: ${result.error}`);
+        }
+      }
+      
+      this.deleting = false;
+      this.showDeleteConfirmation = false;
     }
   }
 };

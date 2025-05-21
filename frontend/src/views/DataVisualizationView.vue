@@ -8,6 +8,22 @@
     
     <h2 class="mb-4">Data Visualization</h2>
     
+    <div class="alert alert-info mb-4">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+        <div>
+          <strong>Standardized Column Format</strong>
+          <p class="mb-1">For best visualization results, your data should include these key columns:</p>
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            <span v-for="col in standardRequiredColumns" :key="col.id" class="badge bg-primary">{{ col.name }}</span>
+          </div>
+          <button @click="downloadTemplate" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-download me-1"></i> Download Template
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <div v-if="loading" class="text-center my-5">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -53,13 +69,15 @@
 
 <script>
 import { mapState, mapActions } from 'vuex';
+import { STANDARD_COLUMNS } from '@/utils/standardColumns';
 
 export default {
   name: 'DataVisualizationView',
   data() {
     return {
       chartInstances: {},
-      chartRenderTimeout: null
+      chartRenderTimeout: null,
+      standardRequiredColumns: STANDARD_COLUMNS.filter(col => col.required)
     };
   },
   computed: {
@@ -92,6 +110,23 @@ export default {
   },
   methods: {
     ...mapActions(['fetchFiles']),
+    
+    downloadTemplate() {
+      // Generate CSV content with headers from standard columns
+      const headers = STANDARD_COLUMNS.map(col => col.name).join(',');
+      const csvContent = 'data:text/csv;charset=utf-8,' + headers;
+      
+      // Create a download link and trigger it
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'aquagreen_data_template.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      this.$toast?.success('Template downloaded successfully');
+    },
     
     formatDate(dateString) {
       if (!dateString) return '';

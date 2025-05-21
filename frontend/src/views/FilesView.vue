@@ -146,7 +146,20 @@ export default {
         await this.fetchFiles()
         this.$toast.success('File processed successfully')
       } catch (error) {
-        this.$toast.error('Failed to process file')
+        const errorMessage = error.response?.data?.error || 
+                           error.response?.data?.detail || 
+                           error.message || 
+                           'Failed to process file';
+                           
+        if(errorMessage.includes('is not a zip file')) {
+          this.$toast.error('The file format is not supported. Please ensure you are uploading a valid Excel file.', {
+            timeout: 6000
+          });
+        } else {
+          this.$toast.error(`Processing error: ${errorMessage}`, {
+            timeout: 5000
+          });
+        }
         console.error('Error processing file:', error)
       } finally {
         this.processingFile = null

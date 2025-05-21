@@ -8,19 +8,7 @@
     </div>
 
     <div class="row mt-5">
-      <div class="col-md-4 mb-4">
-        <div class="card h-100 border-success">
-          <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">Upload Data</h5>
-          </div>
-          <div class="card-body">
-            <p class="card-text">Upload your greenhouse Excel data files for processing and analysis.</p>
-            <router-link to="/upload" class="btn btn-outline-success">Upload Files</router-link>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-md-4 mb-4">
+      <div class="col-md-6 mb-4">
         <div class="card h-100 border-success">
           <div class="card-header bg-success text-white">
             <h5 class="card-title mb-0">View Files</h5>
@@ -32,7 +20,7 @@
         </div>
       </div>
       
-      <div class="col-md-4 mb-4">
+      <div class="col-md-6 mb-4">
         <div class="card h-100 border-success">
           <div class="card-header bg-success text-white">
             <h5 class="card-title mb-0">Data Visualization</h5>

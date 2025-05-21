@@ -125,11 +125,8 @@
 
           <!-- Bar chart for simple visualization -->
           <div class="row">
-            <div class="col-md-6 mb-4">
+            <div class="col-md-12 mb-4">
               <canvas ref="barChart"></canvas>
-            </div>
-            <div class="col-md-6 mb-4">
-              <canvas ref="pieChart"></canvas>
             </div>
           </div>
         </div>
@@ -167,54 +164,81 @@
               <h5 class="mb-3">Data Visualization</h5>
               
               <div class="row">
-                <!-- Soil Metrics Charts -->
+                <!-- Crop Growth Metrics -->
                 <div class="col-md-6 mb-4">
                   <chart-container
-                    v-if="soilMetricsData.datasets.length > 0"
-                    title="Soil Metrics Comparison"
-                    :chart-data="soilMetricsData"
+                    v-if="cropGrowthData.datasets.length > 0"
+                    title="Crop Growth Metrics"
+                    :chart-data="cropGrowthData"
                     :options="barChartOptions"
-                    description="Comparison of soil pH, moisture, temperature and EC"
+                    description="Comparison of Height and Width by Crop"
                     initial-chart-type="bar"
-                    :showControls="false"
+                    :showControls="true"
                   />
                 </div>
                 
-                <!-- Plant Health Chart -->
+                <!-- Health Indicators Chart -->
                 <div class="col-md-6 mb-4">
                   <chart-container
-                    v-if="plantHealthData.datasets.length > 0"
-                    title="Plant Health Metrics"
-                    :chart-data="plantHealthData"
+                    v-if="healthIndicatorsData.datasets.length > 0"
+                    title="Health Indicators"
+                    :chart-data="healthIndicatorsData"
                     :options="lineChartOptions"
-                    description="Death plants count over time"
-                    :showControls="false"
+                    description="NDVI and Health Score over time"
+                    initial-chart-type="line"
+                    :showControls="true"
                   />
                 </div>
                 
-                <!-- Financial Overview -->
+                <!-- Crop Distribution -->
                 <div class="col-md-6 mb-4">
                   <chart-container
-                    v-if="financialData.labels.length > 0"
-                    title="Financial Overview"
-                    :chart-data="financialData"
+                    v-if="cropDistributionData.labels.length > 0"
+                    title="Crop Distribution"
+                    :chart-data="cropDistributionData"
                     :options="pieChartOptions"
-                    description="Income vs Expenses breakdown"
+                    description="Distribution of crops in dataset"
                     initial-chart-type="pie"
-                    :showControls="false"
+                    :showControls="true"
                   />
                 </div>
                 
-                <!-- Soil pH Distribution -->
+                <!-- Growth Stage Distribution -->
                 <div class="col-md-6 mb-4">
                   <chart-container
-                    v-if="soilPhDistributionData.labels.length > 0"
-                    title="Soil pH Distribution"
-                    :chart-data="soilPhDistributionData"
+                    v-if="growthStageData.labels.length > 0"
+                    title="Growth Stage Distribution"
+                    :chart-data="growthStageData"
                     :options="pieChartOptions"
-                    description="Distribution of soil pH levels"
+                    description="Distribution of plant growth stages"
                     initial-chart-type="pie"
-                    :showControls="false"
+                    :showControls="true"
+                  />
+                </div>
+
+                <!-- Health Score Categories -->
+                <div class="col-md-6 mb-4">
+                  <chart-container
+                    v-if="healthCategoriesData.labels.length > 0"
+                    title="Health Score Categories"
+                    :chart-data="healthCategoriesData"
+                    :options="pieChartOptions"
+                    description="Distribution of plants by health score"
+                    initial-chart-type="pie"
+                    :showControls="true"
+                  />
+                </div>
+                
+                <!-- Leaf Count vs Health Score -->
+                <div class="col-md-6 mb-4">
+                  <chart-container
+                    v-if="leafHealthData.datasets.length > 0"
+                    title="Leaf Count vs Health Score"
+                    :chart-data="leafHealthData"
+                    :options="scatterChartOptions"
+                    description="Correlation between leaf count and health score"
+                    initial-chart-type="scatter"
+                    :showControls="true"
                   />
                 </div>
               </div>
@@ -264,7 +288,56 @@ export default {
             beginAtZero: true,
             title: {
               display: true,
-              text: 'Count'
+              text: 'NDVI'
+            },
+            position: 'left'
+          },
+          y1: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Health Score'
+            },
+            position: 'right',
+            grid: {
+              drawOnChartArea: false
+            }
+          },
+          y2: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Chlorophyll Index'
+            },
+            position: 'right',
+            grid: {
+              drawOnChartArea: false
+            }
+          }
+        }
+      },
+      scatterChartOptions: {
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Leaf Count'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Health Score'
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `Leaf Count: ${context.parsed.x}, Health Score: ${context.parsed.y}`;
+              }
             }
           }
         }
@@ -302,95 +375,247 @@ export default {
   computed: {
     ...mapState(['currentFile', 'processedData', 'loading', 'error']),
     
-    // Soil metrics chart data
-    soilMetricsData() {
+    // Crop Growth Metrics chart data
+    cropGrowthData() {
       if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
       
-      // Get record numbers for labels
-      const labels = this.processedData.map(item => `Record ${item.record_no || ''}`).slice(0, 10);
+      // Group data by crop type
+      const cropGroups = {};
+      this.processedData.forEach(item => {
+        const cropType = item.Crop || 'Unknown';
+        if (!cropGroups[cropType]) {
+          cropGroups[cropType] = { 
+            heights: [], 
+            widths: [] 
+          };
+        }
+        
+        // Extract height and width data based on the Excel column names
+        if (item['Height (cm)']) cropGroups[cropType].heights.push(parseFloat(item['Height (cm)']));
+        if (item['Width (cm)']) cropGroups[cropType].widths.push(parseFloat(item['Width (cm)']));
+      });
       
-      // Extract soil metrics data
-      const soilPhData = this.processedData.map(item => parseFloat(item.soil_ph || 0)).slice(0, 10);
-      const soilMoistureData = this.processedData.map(item => parseFloat(item.soil_moisture || 0)).slice(0, 10);
-      const soilTempData = this.processedData.map(item => parseFloat(item.soil_temp || 0)).slice(0, 10);
-      const soilEcData = this.processedData.map(item => parseFloat(item.soil_ec || 0) * 100).slice(0, 10); // Scale EC for visibility
+      // Prepare labels and datasets
+      const labels = Object.keys(cropGroups);
+      const heightData = [];
+      const widthData = [];
+      
+      labels.forEach(crop => {
+        const heights = cropGroups[crop].heights;
+        const widths = cropGroups[crop].widths;
+        
+        // Calculate averages
+        heightData.push(heights.length ? 
+          heights.reduce((sum, val) => sum + val, 0) / heights.length : 0);
+        widthData.push(widths.length ? 
+          widths.reduce((sum, val) => sum + val, 0) / widths.length : 0);
+      });
       
       return {
         labels: labels,
         datasets: [
           {
-            label: 'Soil pH',
-            data: soilPhData,
-            backgroundColor: 'rgba(255, 99, 132, 0.7)',
-            borderColor: 'rgb(255, 99, 132)',
-            borderWidth: 1
-          },
-          {
-            label: 'Soil Moisture',
-            data: soilMoistureData,
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-            borderColor: 'rgb(54, 162, 235)',
-            borderWidth: 1
-          },
-          {
-            label: 'Soil Temp',
-            data: soilTempData,
-            backgroundColor: 'rgba(255, 206, 86, 0.7)',
-            borderColor: 'rgb(255, 206, 86)',
-            borderWidth: 1
-          },
-          {
-            label: 'Soil EC (x100)',
-            data: soilEcData,
+            label: 'Average Height (cm)',
+            data: heightData,
             backgroundColor: 'rgba(75, 192, 192, 0.7)',
             borderColor: 'rgb(75, 192, 192)',
             borderWidth: 1
+          },
+          {
+            label: 'Average Width (cm)',
+            data: widthData,
+            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+            borderColor: 'rgb(54, 162, 235)',
+            borderWidth: 1
           }
         ]
       };
     },
     
-    // Plant health data
-    plantHealthData() {
+    // Health indicators chart data
+    healthIndicatorsData() {
       if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
       
-      // Get dates for labels
-      const labels = this.processedData.map(item => item.date || '');
+      // Sort by date if available
+      const sortedData = [...this.processedData];
+      if (sortedData[0]['Measurement Date']) {
+        sortedData.sort((a, b) => new Date(a['Measurement Date']) - new Date(b['Measurement Date']));
+      }
       
-      // Extract plant health data
-      const deathPlantsData = this.processedData.map(item => parseInt(item.death_plants || 0));
+      // Get dates for labels, limit to a reasonable number of points
+      const maxPoints = 15;
+      const step = Math.max(1, Math.floor(sortedData.length / maxPoints));
+      const filteredData = sortedData.filter((_, index) => index % step === 0);
+      
+      const labels = filteredData.map(item => item['Measurement Date'] || `Plot ${item['Plot ID'] || ''}`);
+      
+      // Extract health indicator data
+      const ndviData = filteredData.map(item => parseFloat(item['NDVI'] || 0));
+      const healthScoreData = filteredData.map(item => parseFloat(item['Health Score'] || 0));
+      const chlorophyllData = filteredData.map(item => parseFloat(item['Chlorophyll Index'] || 0));
       
       return {
         labels: labels,
         datasets: [
           {
-            label: 'Death Plants',
-            data: deathPlantsData,
-            borderColor: 'rgb(255, 99, 132)',
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            label: 'NDVI',
+            data: ndviData,
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
             borderWidth: 2,
             tension: 0.2,
-            fill: true
+            fill: true,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Health Score',
+            data: healthScoreData,
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderWidth: 2,
+            tension: 0.2,
+            fill: true,
+            yAxisID: 'y1'
+          },
+          {
+            label: 'Chlorophyll Index',
+            data: chlorophyllData,
+            borderColor: 'rgb(153, 102, 255)',
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            borderWidth: 2,
+            tension: 0.2,
+            fill: true,
+            yAxisID: 'y2'
           }
         ]
       };
     },
     
-    // Financial data for income/expense tracking
-    financialData() {
-      // This would typically come from your backend
-      // Using sample data for now
+    // Crop distribution data
+    cropDistributionData() {
+      if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
+      
+      // Count occurrences of different crop types
+      const cropCounts = {};
+      
+      this.processedData.forEach(item => {
+        const cropType = item.Crop || 'Unknown';
+        cropCounts[cropType] = (cropCounts[cropType] || 0) + 1;
+      });
+      
       return {
-        labels: ['Income', 'Expenses'],
+        labels: Object.keys(cropCounts),
         datasets: [
           {
-            data: [this.financialSummary.income, this.financialSummary.expenses],
+            data: Object.values(cropCounts),
             backgroundColor: [
+              'rgba(255, 99, 132, 0.7)',
+              'rgba(54, 162, 235, 0.7)',
+              'rgba(255, 206, 86, 0.7)',
               'rgba(75, 192, 192, 0.7)',
-              'rgba(255, 99, 132, 0.7)'
+              'rgba(153, 102, 255, 0.7)',
+              'rgba(255, 159, 64, 0.7)'
+            ],
+            borderColor: [
+              'rgb(255, 99, 132)',
+              'rgb(54, 162, 235)',
+              'rgb(255, 206, 86)',
+              'rgb(75, 192, 192)',
+              'rgb(153, 102, 255)',
+              'rgb(255, 159, 64)'
+            ],
+            borderWidth: 1
+          }
+        ]
+      };
+    },
+    
+    // Growth Stage distribution data
+    growthStageData() {
+      if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
+      
+      // Count occurrences of different growth stages
+      const stageCounts = {};
+      
+      this.processedData.forEach(item => {
+        const growthStage = item['Growth Stage'] || 'Unknown';
+        stageCounts[growthStage] = (stageCounts[growthStage] || 0) + 1;
+      });
+      
+      return {
+        labels: Object.keys(stageCounts),
+        datasets: [
+          {
+            data: Object.values(stageCounts),
+            backgroundColor: [
+              'rgba(75, 192, 192, 0.7)',  // Teal
+              'rgba(153, 102, 255, 0.7)', // Purple
+              'rgba(255, 205, 86, 0.7)',  // Yellow
+              'rgba(54, 162, 235, 0.7)',  // Blue
+              'rgba(255, 99, 132, 0.7)',  // Pink
+              'rgba(201, 203, 207, 0.7)'  // Grey
             ],
             borderColor: [
               'rgb(75, 192, 192)',
+              'rgb(153, 102, 255)',
+              'rgb(255, 205, 86)',
+              'rgb(54, 162, 235)',
+              'rgb(255, 99, 132)',
+              'rgb(201, 203, 207)'
+            ],
+            borderWidth: 1
+          }
+        ]
+      };
+    },
+    
+    // Health Score Categories data
+    healthCategoriesData() {
+      if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
+      
+      // Define health score categories
+      const categories = {
+        'Excellent (90-100)': 0,
+        'Good (75-89)': 0,
+        'Fair (60-74)': 0,
+        'Poor (40-59)': 0,
+        'Critical (<40)': 0
+      };
+      
+      // Count occurrences of different health score categories
+      this.processedData.forEach(item => {
+        const healthScore = parseFloat(item['Health Score'] || 0);
+        
+        if (healthScore >= 90) {
+          categories['Excellent (90-100)']++;
+        } else if (healthScore >= 75) {
+          categories['Good (75-89)']++;
+        } else if (healthScore >= 60) {
+          categories['Fair (60-74)']++;
+        } else if (healthScore >= 40) {
+          categories['Poor (40-59)']++;
+        } else {
+          categories['Critical (<40)']++;
+        }
+      });
+      
+      return {
+        labels: Object.keys(categories),
+        datasets: [
+          {
+            data: Object.values(categories),
+            backgroundColor: [
+              'rgba(75, 192, 192, 0.7)',   // Teal - Excellent
+              'rgba(54, 162, 235, 0.7)',   // Blue - Good
+              'rgba(255, 205, 86, 0.7)',   // Yellow - Fair
+              'rgba(255, 159, 64, 0.7)',   // Orange - Poor
+              'rgba(255, 99, 132, 0.7)'    // Red - Critical
+            ],
+            borderColor: [
+              'rgb(75, 192, 192)',
+              'rgb(54, 162, 235)',
+              'rgb(255, 205, 86)',
+              'rgb(255, 159, 64)',
               'rgb(255, 99, 132)'
             ],
             borderWidth: 1
@@ -399,49 +624,28 @@ export default {
       };
     },
     
-    // Soil pH distribution data
-    soilPhDistributionData() {
+    // Leaf Count vs Health Score scatter plot
+    leafHealthData() {
       if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
       
-      // Count occurrences of different pH ranges
-      const phRanges = {
-        'Very Acidic (<5.5)': 0,
-        'Acidic (5.5-6.5)': 0,
-        'Neutral (6.5-7.5)': 0,
-        'Alkaline (>7.5)': 0
-      };
-      
-      this.processedData.forEach(item => {
-        const ph = parseFloat(item.soil_ph || 0);
-        if (ph < 5.5) {
-          phRanges['Very Acidic (<5.5)']++;
-        } else if (ph >= 5.5 && ph < 6.5) {
-          phRanges['Acidic (5.5-6.5)']++;
-        } else if (ph >= 6.5 && ph < 7.5) {
-          phRanges['Neutral (6.5-7.5)']++;
-        } else if (ph >= 7.5) {
-          phRanges['Alkaline (>7.5)']++;
-        }
-      });
+      // Extract data points for the scatter plot
+      const dataPoints = this.processedData
+        .filter(item => item['Leaf Count'] && item['Health Score'])
+        .map(item => ({
+          x: parseFloat(item['Leaf Count']),
+          y: parseFloat(item['Health Score'])
+        }));
       
       return {
-        labels: Object.keys(phRanges),
+        labels: [],  // Scatter plots don't need labels
         datasets: [
           {
-            data: Object.values(phRanges),
-            backgroundColor: [
-              'rgba(255, 99, 132, 0.7)',
-              'rgba(255, 206, 86, 0.7)',
-              'rgba(75, 192, 192, 0.7)',
-              'rgba(153, 102, 255, 0.7)'
-            ],
-            borderColor: [
-              'rgb(255, 99, 132)',
-              'rgb(255, 206, 86)',
-              'rgb(75, 192, 192)',
-              'rgb(153, 102, 255)'
-            ],
-            borderWidth: 1
+            label: 'Leaf Count vs Health Score',
+            data: dataPoints,
+            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+            borderColor: 'rgb(75, 192, 192)',
+            pointRadius: 5,
+            pointHoverRadius: 8
           }
         ]
       };

@@ -26,7 +26,9 @@
             @change="handleFileSelection"
             accept=".csv"
             required
+            :class="{ 'is-invalid': fileError }"
           >
+          <div class="invalid-feedback" v-if="fileError">{{ fileError }}</div>
           <div class="form-text">Upload a CSV file containing sample IDs (like CROP_001, CROP_002) to match with your images.</div>
         </div>
         
@@ -36,16 +38,18 @@
             class="btn btn-success" 
             :disabled="!selectedFile || loading"
           >
-            <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+            <span v-if="loading" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            <span v-if="loading" class="visually-hidden">Loading...</span>
             Upload CSV File
           </button>
         </div>
       </form>
       
-      <div v-if="uploadSuccess" class="alert alert-success mt-3">
+      <div v-if="uploadSuccess" class="alert alert-success mt-3" role="alert">
         CSV file uploaded successfully! 
         <button @click="processFile" class="btn btn-sm btn-outline-success ms-2" :disabled="processing">
-          <span v-if="processing" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          <span v-if="processing" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+          <span v-if="processing" class="visually-hidden">Processing...</span>
           Process Now
         </button>
       </div>
@@ -65,6 +69,7 @@ export default {
       uploadSuccess: false,
       uploadedFileId: null,
       processing: false,
+      fileError: '',
     }
   },
   computed: {
@@ -77,14 +82,85 @@ export default {
     ...mapActions('crop', ['uploadCsvFile', 'processCsvFile']),
     
     handleFileSelection(event) {
+      this.fileError = '';
       const file = event.target.files[0];
-      if (file) {
-        this.selectedFile = file;
-        // Set default title based on filename if title is empty
-        if (!this.title) {
-          this.title = file.name.replace(/\.csv$/i, '');
-        }
+      
+      if (!file) {
+        return;
       }
+      
+      // Validate file type
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        this.fileError = 'Please select a valid CSV file';
+        this.selectedFile = null;
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        this.fileError = 'File size exceeds the maximum limit of 10MB';
+        this.selectedFile = null;
+        return;
+      }
+      
+      // Read the file to check for sample_id column and validate CSV format
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target.result;
+          const lines = content.split('\n').filter(line => line.trim() !== '');
+          
+          if (lines.length === 0) {
+            this.fileError = 'CSV file appears to be empty';
+            this.selectedFile = null;
+            return;
+          }
+          
+          const firstLine = lines[0].toLowerCase();
+          const columnCount = firstLine.split(',').length;
+          
+          if (columnCount < 2) {
+            this.fileError = 'CSV file must have at least two columns';
+            this.selectedFile = null;
+            return;
+          }
+          
+          if (!firstLine.includes('sample_id')) {
+            this.fileError = 'CSV file must contain a sample_id column';
+            this.selectedFile = null;
+            return;
+          }
+          
+          // Check for data consistency in the first few rows
+          if (lines.length > 1) {
+            for (let i = 1; i < Math.min(5, lines.length); i++) {
+              const rowColumns = lines[i].split(',').length;
+              if (rowColumns !== columnCount) {
+                this.fileError = 'CSV file has inconsistent column counts. Please check your data.';
+                this.selectedFile = null;
+                return;
+              }
+            }
+          }
+          
+          this.selectedFile = file;
+          // Set default title based on filename if title is empty
+          if (!this.title) {
+            this.title = file.name.replace(/\.csv$/i, '');
+          }
+        } catch (error) {
+          console.error('Error parsing CSV header:', error);
+          this.fileError = 'Error reading file. Please try again.';
+          this.selectedFile = null;
+        }
+      };
+      
+      reader.onerror = () => {
+        this.fileError = 'Error reading file. Please try again.';
+        this.selectedFile = null;
+      };
+      
+      reader.readAsText(file);
     },
     
     async uploadFile() {

@@ -27,11 +27,6 @@
             <li class="nav-item">
               <router-link class="nav-link" to="/files">Files</router-link>
             </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/visualizations">
-                <i class="bi bi-graph-up me-1"></i>Visualizations
-              </router-link>
-            </li>
           </ul>
           <div class="d-flex">
             <router-link to="/profile" class="navbar-text me-3 text-light text-decoration-none">

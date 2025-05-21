@@ -6,22 +6,30 @@ import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap/dist/js/bootstrap.bundle.js'
 import axios from 'axios'
 
-// Clear login session when the app is first loaded
-// Using modern approach instead of deprecated navigation API
-const clearLoginSession = () => {
-  // Clear localStorage tokens to force login
-  localStorage.removeItem('token')
-  localStorage.removeItem('refreshToken')
-  localStorage.removeItem('user')
-  
-  // Also clear Vuex state
-  store?.commit('clearAuth')
-}
+// Session activity tracking - 15 minute timeout
+let userActivityTimeout;
+const SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
 
-// Check if this is a fresh page load (not a refresh)
-if (window.location.href.includes('://localhost:8080/')) {
-  clearLoginSession()
-}
+const resetUserActivityTimeout = () => {
+  clearTimeout(userActivityTimeout);
+  userActivityTimeout = setTimeout(() => {
+    // Only log out if user is authenticated
+    if (store.getters.isAuthenticated) {
+      store.commit('clearAuth');
+      router.push('/login');
+    }
+  }, SESSION_TIMEOUT);
+};
+
+// Track user activity to reset the timeout
+window.addEventListener('mousemove', resetUserActivityTimeout);
+window.addEventListener('keypress', resetUserActivityTimeout);
+window.addEventListener('click', resetUserActivityTimeout);
+
+// Initialize the timeout on page load
+resetUserActivityTimeout();
+
+// Persist session on refresh but enforce timeout on inactivity
 
 const app = createApp(App)
   .use(store)
@@ -107,7 +115,7 @@ app.config.globalProperties.$toast = {
   }
 }
 
-axios.defaults.baseURL = 'http://127.0.0.1:8000/api'
+axios.defaults.baseURL = 'http://127.0.0.1:8002/api'
 
 axios.interceptors.request.use(
   config => {

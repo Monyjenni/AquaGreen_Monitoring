@@ -1,3 +1,0 @@
-sample_id,species,cultivation_date,plant_age_days,growth_stage,health_status,description
-CROP_001,Lettuce,2025-01-15,45,Mature,Healthy,Romaine lettuce sample with normal growth pattern
-CROP_002,Lettuce,2025-01-15,45,Mature,Infected,Romaine lettuce sample showing early signs of fungal infection

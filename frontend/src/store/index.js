@@ -291,7 +291,12 @@ export default createStore({
           return response.data;
         })
         .catch(error => {
-          const errorMessage = error.response?.data?.error || error.response?.data || 'Failed to process file';
+          let errorMessage = error.response?.data?.error || error.response?.data || error.message || 'Failed to process file';
+          
+          if (typeof errorMessage === 'object') {
+            errorMessage = JSON.stringify(errorMessage);
+          }
+          
           console.error('Error processing file:', errorMessage);
           commit('setError', errorMessage);
           throw error;

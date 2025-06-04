@@ -57,9 +57,34 @@ const routes = [
     meta: { guest: true }
   },
   {
-    path: '/signup',
+    path: '/register',
     name: 'register',
     component: RegisterView,
+    meta: { guest: true }
+  },
+  {
+    path: '/signup',
+    name: 'signup',
+    component: RegisterView,
+    meta: { guest: true }
+  },
+  {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: () => import('../views/ForgotPasswordView.vue'),
+    meta: { guest: true }
+  },
+  {
+    path: '/reset-password/:uid/:token',
+    name: 'reset-password',
+    component: () => import('../views/ResetPasswordView.vue'),
+    meta: { guest: true }
+  },
+  {
+    path: '/verify-otp',
+    name: 'verify-otp',
+    component: () => import('../views/OtpVerificationView.vue'),
+    props: route => ({ email: route.query.email, returnPath: route.query.returnPath }),
     meta: { guest: true }
   },
   {

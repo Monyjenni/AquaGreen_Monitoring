@@ -115,7 +115,10 @@ app.config.globalProperties.$toast = {
   }
 }
 
-axios.defaults.baseURL = 'http://127.0.0.1:8002/api'
+// Use the server's actual IP address when accessing from other machines
+axios.defaults.baseURL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? 'http://127.0.0.1:8000/api' 
+  : `http://${window.location.hostname}:8000/api`
 
 axios.interceptors.request.use(
   config => {

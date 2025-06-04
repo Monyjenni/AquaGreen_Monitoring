@@ -2,8 +2,10 @@ import { createStore } from 'vuex'
 import axios from 'axios'
 import cropModule from './cropModule'
 
-// Update API URL to match the running Django server
-const API_URL = 'http://127.0.0.1:8000/api'
+// Dynamically determine API URL based on hostname
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://127.0.0.1:8000/api'
+  : `http://${window.location.hostname}:8000/api`
 
 export default createStore({
   modules: {
@@ -80,16 +82,29 @@ export default createStore({
       commit('setLoading', true)
       commit('setError', null)
       
+      console.log('Registration request payload:', userData)
+      console.log('Registration endpoint:', `${API_URL}/auth/register/`)
+      
       return axios.post(`${API_URL}/auth/register/`, userData)
         .then(response => {
+          console.log('Registration success response:', response.data)
+          
+          // Check if registration requires email verification
           if (response.data && response.data.success) {
-            const { access, refresh, user } = response.data;
-            commit('setAuth', { 
-              token: access, 
-              refreshToken: refresh, 
-              user 
-            });
-            return response;
+            if (response.data.requires_verification) {
+              // Return the response with verification info without setting auth state
+              // The UI will redirect to OTP verification
+              return response.data;
+            } else {
+              // Standard flow - set auth state
+              const { access, refresh, user } = response.data;
+              commit('setAuth', { 
+                token: access, 
+                refreshToken: refresh, 
+                user 
+              });
+              return response.data;
+            }
           } else {
             // If registration failed but no error thrown, treat as error
             commit('setError', response.data.errors || 'Registration failed');

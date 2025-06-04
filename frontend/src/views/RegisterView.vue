@@ -71,10 +71,11 @@
 
 <script>
 import { mapActions } from 'vuex';
+import { defineComponent } from 'vue';
 import BaseButton from '@/components/common/BaseButton.vue';
 import BaseCard from '@/components/common/BaseCard.vue';
 
-export default {
+export default defineComponent({
   name: 'RegisterView',
   components: {
     BaseButton,
@@ -103,33 +104,68 @@ export default {
         return;
       }
       
-      // Create a registration payload with only required fields
+      // Email is now required for verification
+      if (!this.email) {
+        this.error = 'Email is required for account verification';
+        this.loading = false;
+        return;
+      }
+      
+      // Create a registration payload with required fields
       const registrationData = {
         username: this.username,
+        email: this.email,
         password: this.password
       };
       
       // Add optional fields only if they have values
-      if (this.email) registrationData.email = this.email;
       if (this.phone) registrationData.phone = this.phone;
       
       try {
-        await this.registerUser(registrationData);
-        this.$router.push('/');
+        const response = await this.registerUser(registrationData);
+        
+        // Check if registration requires email verification
+        if (response && response.requires_verification) {
+          // Redirect to OTP verification with the email and registration flag
+          this.$router.push({
+            name: 'verify-otp',
+            query: {
+              email: this.email,
+              returnPath: '/',
+              isRegistration: 'true'
+            }
+          });
+        } else {
+          // Standard redirect for completed registration
+          this.$router.push('/');
+        }
       } catch (error) {
         console.error('Registration error:', error);
+        // Log the full error response for debugging
+        if (error.response) {
+          console.log('Error response data:', error.response.data);
+          console.log('Error response status:', error.response.status);
+          console.log('Error response headers:', error.response.headers);
+        }
+        
         // Defensive: handle all possible error shapes
         let errorMsg = 'Registration failed. Please try again.';
         if (error && error.response && error.response.data) {
           const errorData = error.response.data;
+          console.log('Error data type:', typeof errorData);
+          
           if (errorData.errors) {
-            // Backend returned { success: false, errors: {...} }
-            const errorMessages = [];
-            for (const field in errorData.errors) {
-              const messages = Array.isArray(errorData.errors[field]) ? errorData.errors[field].join(', ') : errorData.errors[field];
-              errorMessages.push(`${field}: ${messages}`);
+            // Backend returned { errors: {...} }
+            if (typeof errorData.errors === 'string') {
+              errorMsg = errorData.errors;
+            } else {
+              const errorMessages = [];
+              for (const field in errorData.errors) {
+                const messages = Array.isArray(errorData.errors[field]) ? errorData.errors[field].join(', ') : errorData.errors[field];
+                errorMessages.push(`${field}: ${messages}`);
+              }
+              errorMsg = errorMessages.join('\n');
             }
-            errorMsg = errorMessages.join('\n');
           } else if (typeof errorData === 'string') {
             errorMsg = errorData;
           } else if (typeof errorData === 'object') {
@@ -148,7 +184,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style scoped>

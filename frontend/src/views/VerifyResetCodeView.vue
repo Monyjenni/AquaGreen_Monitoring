@@ -1,12 +1,70 @@
 <template>
-  <div class="reset-password-container">
+  <div class="verify-reset-code-container">
     <div class="card login-card">
       <div class="card-body">
         <h2 class="text-center mb-4">
           <span class="brand-name">Aqua<span class="text-success">Green</span></span>
         </h2>
-        <h3 class="text-center mb-4">Reset Password</h3>
-        <div v-if="!resetSuccess && !resetError" class="form-container">
+        <h3 class="text-center mb-4">Verify Reset Code</h3>
+        
+        <div v-if="step === 'verify-code'" class="form-container">
+          <p class="instruction">Enter the verification code sent to your email.</p>
+          
+          <div class="form-group">
+            <label for="code">Verification Code</label>
+            <input 
+              type="text" 
+              id="code" 
+              v-model="code" 
+              class="form-control" 
+              placeholder="Enter 6-digit code"
+              :class="{ 'is-invalid': codeError }"
+              @input="codeError = ''"
+              maxlength="6"
+              inputmode="numeric"
+              pattern="[0-9]*"
+            >
+            <div v-if="codeError" class="invalid-feedback">{{ codeError }}</div>
+          </div>
+          
+          <div class="form-actions d-flex flex-column">
+            <button 
+              @click="goBack" 
+              class="btn btn-outline-secondary w-100 mb-3"
+            >
+              <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <button 
+              @click="verifyCode" 
+              class="btn btn-success w-100" 
+              :disabled="isLoading"
+            >
+              <span v-if="isLoading">
+                <i class="fas fa-spinner fa-spin"></i> Verifying...
+              </span>
+              <span v-else>Verify Code</span>
+            </button>
+          </div>
+          
+          <div class="resend-code mt-4 text-center">
+            <p>Didn't receive the code?</p>
+            <button 
+              @click="resendCode" 
+              class="btn btn-link p-0"
+              :disabled="resendLoading || resendCountdown > 0"
+            >
+              <span v-if="resendLoading">
+                <i class="fas fa-spinner fa-spin"></i> Sending...
+              </span>
+              <span v-else-if="resendCountdown > 0">
+                Resend code in {{ resendCountdown }} seconds
+              </span>
+              <span v-else>Resend Code</span>
+            </button>
+          </div>
+        </div>
+        
+        <div v-else-if="step === 'set-password'" class="form-container">
           <p class="instruction">Enter your new password below to reset your account password.</p>
           
           <div class="form-group">
@@ -48,12 +106,12 @@
             </ul>
           </div>
           
-          <div class="form-actions">
+          <div class="form-actions d-flex flex-column">
             <button 
-              @click="goToLogin" 
+              @click="goBackToCodeVerification" 
               class="btn btn-outline-secondary w-100 mb-3"
             >
-              <i class="fas fa-arrow-left"></i> Back to Login
+              <i class="fas fa-arrow-left"></i> Back
             </button>
             <button 
               @click="resetPassword" 
@@ -68,7 +126,7 @@
           </div>
         </div>
         
-        <div v-else-if="resetSuccess" class="success-message">
+        <div v-else-if="step === 'success'" class="success-message">
           <i class="fas fa-check-circle success-icon"></i>
           <h3>Password Reset Complete!</h3>
           <p>Your password has been successfully reset.</p>
@@ -78,14 +136,14 @@
           </button>
         </div>
         
-        <div v-else class="error-message">
+        <div v-else-if="step === 'error'" class="error-message">
           <i class="fas fa-exclamation-circle error-icon"></i>
           <h3>Password Reset Failed</h3>
-          <p>{{ resetErrorMessage }}</p>
-          <p class="note">Please try again or request a new password reset link.</p>
+          <p>{{ errorMessage }}</p>
+          <p class="note">Please try again or request a new verification code.</p>
           <div class="form-actions mt-3 d-flex flex-column">
             <button @click="goToForgotPassword" class="btn btn-outline-secondary w-100 mb-3">
-              Request New Link
+              Request New Code
             </button>
             <button @click="goToLogin" class="btn btn-success w-100">
               Return to Login
@@ -102,37 +160,115 @@ import { defineComponent } from 'vue';
 import axios from 'axios';
 
 export default defineComponent({
-  name: 'ResetPasswordView',
+  name: 'VerifyResetCodeView',
   data() {
     return {
+      email: '',
+      code: '',
       password: '',
       confirmPassword: '',
+      codeError: '',
       passwordError: '',
       confirmPasswordError: '',
       isLoading: false,
-      resetSuccess: false,
-      resetError: false,
-      resetErrorMessage: '',
-      uid: '',
-      token: ''
+      resendLoading: false,
+      resendCountdown: 0,
+      countdownInterval: null,
+      step: 'verify-code',
+      errorMessage: ''
     };
   },
   created() {
-    // Extract uid and token from URL parameters
-    this.uid = this.$route.params.uid;
-    this.token = this.$route.params.token;
+    // Get email from route params or query
+    this.email = this.$route.params.email || this.$route.query.email;
     
-    if (!this.uid || !this.token) {
-      this.resetError = true;
-      this.resetErrorMessage = 'Invalid password reset link. Please request a new link.';
+    if (!this.email) {
+      // If no email is provided, redirect to forgot password page
+      this.$router.push('/forgot-password');
     }
   },
+  beforeUnmount() {
+    this.stopResendCountdown();
+  },
   methods: {
+    goBack() {
+      this.$router.push('/forgot-password');
+    },
     goToLogin() {
       this.$router.push('/login');
     },
     goToForgotPassword() {
       this.$router.push('/forgot-password');
+    },
+    goBackToCodeVerification() {
+      this.step = 'verify-code';
+    },
+    startResendCountdown() {
+      this.resendCountdown = 60;
+      this.stopResendCountdown(); // Clear any existing interval
+      
+      this.countdownInterval = setInterval(() => {
+        if (this.resendCountdown > 0) {
+          this.resendCountdown--;
+        } else {
+          this.stopResendCountdown();
+        }
+      }, 1000);
+    },
+    stopResendCountdown() {
+      if (this.countdownInterval) {
+        clearInterval(this.countdownInterval);
+        this.countdownInterval = null;
+      }
+    },
+    async resendCode() {
+      if (this.resendLoading || this.resendCountdown > 0) {
+        return;
+      }
+      
+      this.resendLoading = true;
+      
+      try {
+        await axios.post('/api/auth/password-reset-otp/request-code/', {
+          email: this.email
+        });
+        
+        // Start countdown for resend button
+        this.startResendCountdown();
+      } catch (error) {
+        console.error('Failed to resend verification code:', error);
+        // Don't show error for security reasons
+      } finally {
+        this.resendLoading = false;
+      }
+    },
+    async verifyCode() {
+      if (!this.code) {
+        this.codeError = 'Verification code is required';
+        return;
+      }
+      
+      if (!/^\d{6}$/.test(this.code)) {
+        this.codeError = 'Please enter a valid 6-digit code';
+        return;
+      }
+      
+      this.isLoading = true;
+      
+      try {
+        await axios.post('/api/auth/password-reset-otp/verify-code/', {
+          email: this.email,
+          code: this.code
+        });
+        
+        // Move to password reset step
+        this.step = 'set-password';
+      } catch (error) {
+        console.error('Code verification failed:', error);
+        this.codeError = 'Invalid or expired verification code';
+      } finally {
+        this.isLoading = false;
+      }
     },
     validatePassword() {
       let isValid = true;
@@ -169,22 +305,21 @@ export default defineComponent({
       this.isLoading = true;
       
       try {
-        await axios.post('/password-reset/reset-with-code/', {
-          email: this.uid,
-          code: this.token,
+        await axios.post('/api/auth/password-reset-otp/reset-with-code/', {
+          email: this.email,
+          code: this.code,
           new_password: this.password
         });
         
-        this.resetSuccess = true;
-        this.$toast.success('Password reset successful!');
+        this.step = 'success';
       } catch (error) {
         console.error('Password reset failed:', error);
-        this.resetError = true;
+        this.step = 'error';
         
         if (error.response && error.response.data && error.response.data.error) {
-          this.resetErrorMessage = error.response.data.error;
+          this.errorMessage = error.response.data.error;
         } else {
-          this.resetErrorMessage = 'An error occurred while resetting your password. Please try again.';
+          this.errorMessage = 'An error occurred while resetting your password. Please try again.';
         }
       } finally {
         this.isLoading = false;
@@ -195,7 +330,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.reset-password-container {
+.verify-reset-code-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -220,6 +355,12 @@ export default defineComponent({
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: none;
   border-radius: 10px;
+  background-color: white;
+}
+
+.brand-name {
+  font-size: 1.8rem;
+  font-weight: bold;
 }
 
 .card-body {
@@ -255,8 +396,6 @@ label {
 }
 
 .form-actions {
-  display: flex;
-  flex-direction: column;
   margin-top: 30px;
 }
 
@@ -270,62 +409,47 @@ label {
 }
 
 .btn-success {
-  background-color: #4CAF50;
+  background-color: #198754;
   color: white;
   transition: background-color 0.3s ease;
 }
 
 .btn-success:hover, .btn-success:focus {
-  background-color: #3c8c40 !important;
-  color: white;
+  background-color: #157347 !important;
 }
 
 .btn-outline-secondary {
   color: #6c757d;
-  border-color: #6c757d;
+  border: 1px solid #6c757d;
   transition: all 0.3s ease;
 }
 
 .btn-outline-secondary:hover, .btn-outline-secondary:focus {
-  background-color: #f8f9fa;
-  color: #495057;
-}
-
-.btn-secondary {
+  color: #fff;
   background-color: #6c757d;
-  color: white;
-}
-
-.btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.instruction {
-  margin-bottom: 20px;
-  color: #495057;
 }
 
 .success-message, .error-message {
   text-align: center;
-  color: #495057;
+  padding: 20px 0;
+}
+
+.success-icon, .error-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
 }
 
 .success-icon {
-  font-size: 64px;
-  color: #4CAF50;
-  margin-bottom: 20px;
+  color: #198754;
 }
 
 .error-icon {
-  font-size: 64px;
   color: #dc3545;
-  margin-bottom: 20px;
 }
 
 .note {
-  font-size: 14px;
   color: #6c757d;
+  font-style: italic;
   margin-top: 15px;
 }
 
@@ -333,27 +457,39 @@ label {
   background-color: #f8f9fa;
   border-radius: 4px;
   padding: 15px;
-  margin-bottom: 20px;
+  margin-top: 20px;
+  font-size: 0.9rem;
 }
 
 .password-requirements h4 {
-  font-size: 16px;
+  font-size: 1rem;
+  margin-top: 0;
   margin-bottom: 10px;
-  color: #495057;
 }
 
 .password-requirements ul {
-  padding-left: 20px;
   margin-bottom: 0;
+  padding-left: 20px;
 }
 
 .password-requirements li {
-  font-size: 14px;
-  color: #6c757d;
   margin-bottom: 5px;
 }
 
-.mt-3 {
-  margin-top: 15px;
+.btn-link {
+  color: #198754;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.btn-link:hover {
+  color: #157347;
+  text-decoration: underline;
+}
+
+.resend-code p {
+  margin-bottom: 5px;
+  color: #6c757d;
 }
 </style>

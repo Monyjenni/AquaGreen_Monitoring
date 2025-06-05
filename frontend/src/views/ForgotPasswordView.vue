@@ -7,7 +7,7 @@
         </h2>
         <h3 class="text-center mb-4">Forgot Password</h3>
         <div v-if="!emailSent" class="form-container">
-          <p class="instruction">Enter your email address below and we'll send you a link to reset your password.</p>
+          <p class="instruction">Enter your email address below and we'll send you a verification code to reset your password.</p>
           
           <div class="form-group">
             <label for="email">Email Address</label>
@@ -46,9 +46,12 @@
         <div v-else class="success-message">
           <i class="fas fa-check-circle success-icon"></i>
           <h3>Email Sent!</h3>
-          <p>If your email address exists in our database, you will receive a password recovery link at your email address shortly.</p>
+          <p>If your email address exists in our database, you will receive a verification code at your email address shortly.</p>
           <p class="note">If you don't receive an email, please check your spam folder or verify you entered the correct email address.</p>
-          <button @click="goBack" class="btn btn-success w-100 mt-3">
+          <button @click="proceedToVerification" class="btn btn-success w-100 mb-3">
+            Enter Verification Code
+          </button>
+          <button @click="goBack" class="btn btn-outline-secondary w-100">
             Return to Login
           </button>
         </div>
@@ -91,12 +94,13 @@ export default defineComponent({
       this.isLoading = true;
       
       try {
-        await axios.post('/api/auth/password-reset/request/', {
+        await axios.post('/password-reset/request-code/', {
           email: this.email
         });
         
         // We don't reveal if the email exists for security reasons
         this.emailSent = true;
+        this.$toast.success('If your email is registered, you will receive a verification code shortly.');
       } catch (error) {
         console.error('Password reset request failed:', error);
         
@@ -105,6 +109,13 @@ export default defineComponent({
       } finally {
         this.isLoading = false;
       }
+    },
+    proceedToVerification() {
+      // Navigate to verification page with the email
+      this.$router.push({
+        name: 'verify-reset-code',
+        query: { email: this.email }
+      });
     }
   }
 });

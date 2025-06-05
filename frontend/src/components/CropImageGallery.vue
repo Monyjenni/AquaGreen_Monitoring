@@ -84,11 +84,6 @@
       </div>
       <h4 class="text-muted">No Images Found</h4>
       <p class="text-muted">Try adjusting your filters or upload new images.</p>
-      <div class="mt-3">
-        <button class="btn btn-primary" @click="$emit('add-images')">
-          Upload Images
-        </button>
-      </div>
     </div>
     
     <div v-else>

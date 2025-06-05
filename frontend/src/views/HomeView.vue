@@ -11,11 +11,20 @@
       <div class="col-md-6 mb-4">
         <div class="card h-100 border-success">
           <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">View Files</h5>
+            <h5 class="card-title mb-0">Plant Growth Analysis</h5>
           </div>
           <div class="card-body">
-            <p class="card-text">View and manage your uploaded greenhouse data files.</p>
-            <router-link to="/files" class="btn btn-outline-success">View Files</router-link>
+            <p class="card-text">Upload, view, and analyze greenhouse data and metrics.</p>
+            <ul class="mb-3">
+              <li>Track growth rates over time</li>
+              <li>Compare different plant varieties</li>
+              <li>Identify optimal growing conditions</li>
+              <li>Upload and manage Excel files</li>
+            </ul>
+            <div class="d-flex flex-wrap gap-2">
+              <router-link to="/upload" class="btn btn-outline-success">Upload Files</router-link>
+              <router-link to="/files" class="btn btn-outline-success">View Files</router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -23,47 +32,21 @@
       <div class="col-md-6 mb-4">
         <div class="card h-100 border-success">
           <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">Data Visualization</h5>
+            <h5 class="card-title mb-0">Genetic Mapping Images</h5>
           </div>
           <div class="card-body">
-            <p class="card-text">Visualize your greenhouse metrics and analyze trends.</p>
-            <router-link to="/files" class="btn btn-outline-success">Analyze Data</router-link>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row mt-4">
-      <div class="col-md-6 mb-4">
-        <div class="card h-100 border-success">
-          <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">Crop Image Management</h5>
-          </div>
-          <div class="card-body">
-            <p class="card-text">Upload, view, and manage crop images with metadata tracking.</p>
+            <p class="card-text">Manage crop images and CSV files for genetic analysis.</p>
             <ul class="mb-3">
-              <li>Upload multiple crop images at once</li>
-              <li>Associate images with CSV mapping files</li>
-              <li>Add detailed metadata to each image</li>
+              <li>Upload and manage crop images with metadata</li>
+              <li>Process CSV mapping files for crop data</li>
+              <li>View gene expression heat maps</li>
+              <li>Analyze genetic markers</li>
+              <li>Compare genetic variations</li>
             </ul>
-            <router-link to="/crop-images" class="btn btn-outline-success">Manage Crop Images</router-link>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-md-6 mb-4">
-        <div class="card h-100 border-success">
-          <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">CSV Mapping Files</h5>
-          </div>
-          <div class="card-body">
-            <p class="card-text">Upload and process CSV mapping files for crop metadata.</p>
-            <ul class="mb-3">
-              <li>Create structured CSV templates for crop data</li>
-              <li>Process and extract metadata automatically</li>
-              <li>Link CSV files to multiple crop images</li>
-            </ul>
-            <router-link to="/csv-files" class="btn btn-outline-success">Manage CSV Files</router-link>
+            <div class="d-flex flex-wrap gap-2">
+              <router-link to="/crop-images" class="btn btn-outline-success">Manage Crop Images</router-link>
+              <router-link to="/csv-files" class="btn btn-outline-success">Manage CSV Files</router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -72,9 +55,14 @@
 </template>
 
 <script>
-export default {
-  name: 'HomeView'
-}
+import { defineComponent } from 'vue'
+
+export default defineComponent({
+  name: 'HomeView',
+  data() {
+    return {}
+  }
+})
 </script>
 
 <style scoped>

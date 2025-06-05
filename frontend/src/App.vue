@@ -19,7 +19,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
-              <router-link class="nav-link" to="/">Home</router-link>
+              <router-link class="nav-link" to="/dashboard">Home</router-link>
             </li>
             <li class="nav-item">
               <router-link class="nav-link" to="/upload">Upload</router-link>
@@ -52,11 +52,9 @@
       <router-view />
     </div>
 
-    <footer v-if="isAuthenticated" class="footer mt-5 py-3 bg-light">
+    <footer class="footer mt-5 py-3 bg-light">
       <div class="container text-center">
-        <span class="text-muted"
-          >AquaGreen Monitoring Website &copy; {{ new Date().getFullYear() }}</span
-        >
+        <span class="text-muted">AquaGreen &copy; 2025</span>
       </div>
     </footer>
   </div>
@@ -64,9 +62,10 @@
 
 <script>
 import { mapState, mapActions } from "vuex";
+import { defineComponent } from 'vue';
 import { initSessionTimeout } from "./utils/sessionUtils";
 
-export default {
+export default defineComponent({
   name: "App",
   data() {
     return {
@@ -130,8 +129,8 @@ export default {
         this.sessionTimeoutCleanup = null;
       }
     }
-  },
-};
+  }
+});
 </script>
 
 <style>

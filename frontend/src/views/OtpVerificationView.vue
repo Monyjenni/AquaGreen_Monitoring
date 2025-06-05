@@ -198,7 +198,7 @@ export default defineComponent({
       this.isResending = true;
       
       try {
-        await axios.post('/auth/otp/request/', {
+        await axios.post('/password-reset/request-code/', {
           email: this.email
         });
         
@@ -208,8 +208,10 @@ export default defineComponent({
         
         // Show success message
         this.$emit('otp-resent');
+        this.$toast.success('Verification code resent successfully');
       } catch (error) {
         console.error('Failed to resend OTP:', error);
+        this.$toast.error('Failed to resend verification code');
       } finally {
         this.isResending = false;
       }
@@ -223,9 +225,9 @@ export default defineComponent({
       this.isVerifying = true;
       
       try {
-        const response = await axios.post('/auth/otp/verify/', {
+        const response = await axios.post('/password-reset/verify-code/', {
           email: this.emailValue,
-          otp: this.otp,
+          code: this.otp,
           registration: this.isRegistrationValue // Send registration flag to the backend
         });
         

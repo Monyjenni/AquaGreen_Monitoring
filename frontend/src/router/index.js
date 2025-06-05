@@ -10,7 +10,14 @@ import store from '../store'
 const routes = [
   {
     path: '/',
-    name: 'home',
+    name: 'root',
+    redirect: () => {
+      return localStorage.getItem('token') ? '/dashboard' : '/login';
+    }
+  },
+  {
+    path: '/dashboard',
+    name: 'dashboard',
     component: HomeView,
     meta: { requiresAuth: true }
   },
@@ -81,6 +88,13 @@ const routes = [
     meta: { guest: true }
   },
   {
+    path: '/verify-reset-code',
+    name: 'verify-reset-code',
+    component: () => import('../views/VerifyResetCodeView.vue'),
+    props: route => ({ email: route.query.email }),
+    meta: { guest: true }
+  },
+  {
     path: '/verify-otp',
     name: 'verify-otp',
     component: () => import('../views/OtpVerificationView.vue'),
@@ -109,9 +123,13 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const isAuthenticated = store.getters.isAuthenticated
   
-  // Redirect root path to login if not authenticated
-  if (to.path === '/' && !isAuthenticated) {
-    next({ name: 'login' })
+  // Handle root path redirection
+  if (to.path === '/') {
+    if (isAuthenticated) {
+      next({ name: 'dashboard' })
+    } else {
+      next({ name: 'login' })
+    }
     return
   }
   
@@ -126,7 +144,7 @@ router.beforeEach((to, from, next) => {
   // Route is for guests only (like login, register)
   else if (to.matched.some(record => record.meta.guest)) {
     if (isAuthenticated) {
-      next({ name: 'home' })
+      next({ name: 'dashboard' })
     } else {
       next()
     }

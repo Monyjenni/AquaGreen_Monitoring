@@ -229,7 +229,7 @@ export default defineComponent({
       this.resendLoading = true;
       
       try {
-        await axios.post('/api/auth/password-reset-otp/request-code/', {
+        await axios.post('auth/password-reset-otp/request-code/', {
           email: this.email
         });
         
@@ -256,7 +256,7 @@ export default defineComponent({
       this.isLoading = true;
       
       try {
-        await axios.post('/api/auth/password-reset-otp/verify-code/', {
+        await axios.post('auth/password-reset-otp/verify-code/', {
           email: this.email,
           code: this.code
         });
@@ -305,7 +305,7 @@ export default defineComponent({
       this.isLoading = true;
       
       try {
-        await axios.post('/api/auth/password-reset-otp/reset-with-code/', {
+        await axios.post('auth/password-reset-otp/reset-with-code/', {
           email: this.email,
           code: this.code,
           new_password: this.password

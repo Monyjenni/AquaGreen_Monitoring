@@ -94,7 +94,7 @@ export default defineComponent({
       this.isLoading = true;
       
       try {
-        await axios.post('/password-reset/request-code/', {
+        await axios.post('auth/password-reset-otp/request-code/', {
           email: this.email
         });
         

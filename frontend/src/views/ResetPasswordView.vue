@@ -169,7 +169,7 @@ export default defineComponent({
       this.isLoading = true;
       
       try {
-        await axios.post('/password-reset/reset-with-code/', {
+        await axios.post('auth/password-reset-otp/reset-with-code/', {
           email: this.uid,
           code: this.token,
           new_password: this.password

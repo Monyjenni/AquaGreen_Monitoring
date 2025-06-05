@@ -198,7 +198,7 @@ export default defineComponent({
       this.isResending = true;
       
       try {
-        await axios.post('/password-reset/request-code/', {
+        await axios.post('auth/password-reset-otp/request-code/', {
           email: this.email
         });
         
@@ -225,7 +225,7 @@ export default defineComponent({
       this.isVerifying = true;
       
       try {
-        const response = await axios.post('/password-reset/verify-code/', {
+        const response = await axios.post('auth/password-reset-otp/verify-code/', {
           email: this.emailValue,
           code: this.otp,
           registration: this.isRegistrationValue // Send registration flag to the backend

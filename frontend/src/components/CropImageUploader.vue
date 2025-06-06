@@ -290,16 +290,19 @@ export default defineComponent({
         this.$toast?.error('CSV file has not been processed yet. Please process it first.');
         return false;
       }
-      
-      // Check if CSV file has sample IDs
-      if (!csvFile.metadata || !csvFile.metadata.sample_ids || csvFile.metadata.sample_ids.length === 0) {
-        this.$toast?.error('CSV file does not contain any sample IDs. Please check the file format.');
+
+      // Check if CSV file has row labels (from 'No.' column)
+      if (!csvFile.metadata || !csvFile.metadata.row_labels || csvFile.metadata.row_labels.length === 0) {
+        this.$toast?.error('CSV file does not contain any valid "No." labels. Please check the file format.');
         return false;
       }
-      
-      // For now, we're just checking if the CSV has been processed
-      // In a real implementation, we would validate image names against sample IDs
-      
+
+      // Ensure image count matches row label count
+      if (this.selectedFiles.length !== csvFile.metadata.row_labels.length) {
+        this.$toast?.error(`Number of images (${this.selectedFiles.length}) does not match number of rows (${csvFile.metadata.row_labels.length}) in the CSV.`);
+        return false;
+      }
+
       return true;
     }
   }

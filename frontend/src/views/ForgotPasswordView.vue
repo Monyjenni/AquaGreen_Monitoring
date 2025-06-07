@@ -94,18 +94,25 @@ export default defineComponent({
       this.isLoading = true;
       
       try {
-        await axios.post('auth/password-reset-otp/request-code/', {
+        await axios.post('auth/password-reset/request/', {
           email: this.email
         });
         
-        // We don't reveal if the email exists for security reasons
-        this.emailSent = true;
-        this.$toast.success('If your email is registered, you will receive a verification code shortly.');
+        // Navigate directly to reset password page with email as parameter
+        this.$router.push({
+          name: 'reset-password-direct',
+          params: { email: this.email }
+        });
+        
+        this.$toast.success('If your email is registered, you can now reset your password.');
       } catch (error) {
         console.error('Password reset request failed:', error);
-        
-        // Don't reveal if the email doesn't exist
-        this.emailSent = true;
+        // Still navigate to reset password page even if there's an error
+        // This is for security reasons to not reveal if the email exists
+        this.$router.push({
+          name: 'reset-password-direct',
+          params: { email: this.email }
+        });
       } finally {
         this.isLoading = false;
       }

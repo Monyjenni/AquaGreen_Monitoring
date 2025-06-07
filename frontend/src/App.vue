@@ -6,6 +6,7 @@
     >
       <div class="container">
         <router-link class="navbar-brand" to="/">
+          <img src="@/assets/images/Logo.png" alt="Logo" style="height: 30px;" class="me-2">
           <span class="brand-name">Aqua<span class="text-light">Green</span></span>
         </router-link>
         <button

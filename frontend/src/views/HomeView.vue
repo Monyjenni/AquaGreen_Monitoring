@@ -17,7 +17,7 @@
               <i class="fas fa-seedling fa-2x text-success"></i>
             </span>
             <h4 class="card-title mb-2">Greenhouse Data Upload</h4>
-            <p class="card-text text-muted mb-4">Upload and manage your greenhouse data files (Excel format) for plant growth and environment tracking.</p>
+            <p class="card-text text-muted mb-4">Upload and manage your greenhouse data files (Excel/CSV format) for plant growth and environment tracking.</p>
             <router-link to="/upload-greenhouse" class="btn btn-success btn-lg px-4">Go to Greenhouse Upload</router-link>
           </div>
         </div>

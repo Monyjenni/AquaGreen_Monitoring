@@ -93,12 +93,12 @@ const routes = [
     meta: { guest: true }
   },
   {
-    path: '/verify-reset-code',
-    name: 'verify-reset-code',
-    component: () => import('../views/VerifyResetCodeView.vue'),
-    props: route => ({ email: route.query.email }),
+    path: '/reset-password-direct/:email',
+    name: 'reset-password-direct',
+    component: () => import('../views/ResetPasswordView.vue'),
     meta: { guest: true }
   },
+
   {
     path: '/profile',
     name: 'profile',

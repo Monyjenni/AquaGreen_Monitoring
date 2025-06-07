@@ -1,7 +1,7 @@
 <template>
   <div class="upload-view">
     <div class="mb-4">
-      <router-link to="/" class="btn btn-sm btn-outline-secondary">
+      <router-link to="/upload" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i> Back
       </router-link>
       <h2 class="mt-3 text-success">Upload Greenhouse Data</h2>

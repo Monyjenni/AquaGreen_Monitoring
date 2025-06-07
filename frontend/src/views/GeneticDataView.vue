@@ -1,5 +1,10 @@
 <template>
   <div class="container mt-4">
+    <div class="mb-4">
+      <router-link to="/upload" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </router-link>
+    </div>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2><i class="fas fa-dna me-2"></i>Genetic Data Management</h2>
     </div>

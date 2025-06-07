@@ -1,5 +1,10 @@
 <template>
   <div class="container mt-4">
+    <div class="mb-4">
+      <router-link to="/upload" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </router-link>
+    </div>
     <div class="row">
       <!-- Left Side: CSV Upload and Preview -->
       <div class="col-md-7">

@@ -1,9 +1,13 @@
 <template>
-  <div class="upload-portal-bg min-vh-100 py-5">
     <div class="container">
+      <div class="mb-4">
+        <router-link to="/" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i> Back
+        </router-link>
+      </div>
       <div class="text-center mb-5">
-        <img src="/logo.png" alt="Agri Project Logo" class="mb-3" style="height: 64px;">
-        <h1 class="display-5 fw-bold mb-2">Agri Data Upload Center</h1>
+        <img src="@/assets/images/Logo.png" alt="Logo" class="mb-3" style="height: 128px;">
+        <h1 class="display-5 fw-bold mb-2">AquaGreen Upload Center</h1>
         <p class="lead text-muted">Easily upload and manage your Greenhouse and Genetic data. Choose a portal below to get started.</p>
       </div>
       <div class="row justify-content-center g-4">
@@ -14,7 +18,7 @@
                 <i class="fas fa-seedling fa-2x text-success"></i>
               </span>
               <h4 class="card-title mb-2">Greenhouse Data Upload</h4>
-              <p class="card-text text-muted mb-4">Upload and manage your greenhouse data files (Excel format) for plant growth and environment tracking.</p>
+              <p class="card-text text-muted mb-4">Upload and manage your greenhouse data files (Excel/CSV format) for plant growth and environment tracking.</p>
               <router-link to="/upload-greenhouse" class="btn btn-success btn-lg px-4">Go to Greenhouse Upload</router-link>
             </div>
           </div>
@@ -33,7 +37,6 @@
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script>

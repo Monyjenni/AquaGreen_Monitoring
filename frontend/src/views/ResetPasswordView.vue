@@ -114,17 +114,26 @@ export default defineComponent({
       resetError: false,
       resetErrorMessage: '',
       uid: '',
-      token: ''
+      token: '',
+      email: '',
+      isDirectReset: false
     };
   },
   created() {
-    // Extract uid and token from URL parameters
-    this.uid = this.$route.params.uid;
-    this.token = this.$route.params.token;
-    
-    if (!this.uid || !this.token) {
-      this.resetError = true;
-      this.resetErrorMessage = 'Invalid password reset link. Please request a new link.';
+    // Check if this is a direct reset (with email) or token-based reset
+    if (this.$route.name === 'reset-password-direct') {
+      // Direct reset with email
+      this.email = this.$route.params.email;
+      this.isDirectReset = true;
+    } else {
+      // Token-based reset
+      this.uid = this.$route.params.uid;
+      this.token = this.$route.params.token;
+      
+      if (!this.uid || !this.token) {
+        this.resetError = true;
+        this.resetErrorMessage = 'Invalid password reset link. Please request a new link.';
+      }
     }
   },
   methods: {
@@ -169,14 +178,28 @@ export default defineComponent({
       this.isLoading = true;
       
       try {
-        await axios.post('auth/password-reset-otp/reset-with-code/', {
-          email: this.uid,
-          code: this.token,
-          new_password: this.password
-        });
+        if (this.isDirectReset) {
+          // Direct reset with email
+          await axios.post('auth/password-reset/confirm/', {
+            email: this.email,
+            new_password: this.password
+          });
+        } else {
+          // Token-based reset
+          await axios.post('auth/password-reset/confirm/', {
+            uid: this.uid,
+            token: this.token,
+            new_password: this.password
+          });
+        }
         
         this.resetSuccess = true;
         this.$toast.success('Password reset successful!');
+        
+        // Automatically redirect to login after 2 seconds
+        setTimeout(() => {
+          this.goToLogin();
+        }, 2000);
       } catch (error) {
         console.error('Password reset failed:', error);
         this.resetError = true;

@@ -89,24 +89,15 @@ export default createStore({
         .then(response => {
           console.log('Registration success response:', response.data)
           
-          // Check if registration requires email verification
           if (response.data && response.data.success) {
-            if (response.data.requires_verification) {
-              // Return the response with verification info without setting auth state
-              // The UI will redirect to OTP verification
-              return response.data;
-            } else {
-              // Standard flow - set auth state
-              const { access, refresh, user } = response.data;
-              commit('setAuth', { 
-                token: access, 
-                refreshToken: refresh, 
-                user 
-              });
-              return response.data;
-            }
+            const { access, refresh, user } = response.data
+            commit('setAuth', { 
+              token: access, 
+              refreshToken: refresh, 
+              user 
+            });
+            return response.data;
           } else {
-            // If registration failed but no error thrown, treat as error
             commit('setError', response.data.errors || 'Registration failed');
             throw { response };
           }
@@ -272,7 +263,7 @@ export default createStore({
         })
         .catch(error => {
           console.error('Error uploading file:', error.response?.data || error)
-          commit('setError', error.response?.data?.error || 'Failed to upload file')
+          commit('setError', error.response?.data?.error || error.response?.data || 'Failed to upload file')
           throw error
         })
         .finally(() => {

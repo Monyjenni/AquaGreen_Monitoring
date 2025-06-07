@@ -9,48 +9,38 @@
     
 
 
-    <div class="row mt-5">
+    <div class="row">
       <div class="col-md-6 mb-4">
-        <div class="card h-100 border-success">
-          <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">Plant Growth Analysis</h5>
-          </div>
-          <div class="card-body">
-            <p class="card-text">Upload, view, and analyze greenhouse data and metrics.</p>
-            <ul class="mb-3">
-              <li>Track growth rates over time</li>
-              <li>Compare different plant varieties</li>
-              <li>Identify optimal growing conditions</li>
-              <li>Upload and manage Excel files</li>
-            </ul>
-            <div class="d-flex flex-wrap gap-2">
-              <router-link to="/upload" class="btn btn-outline-success">Upload Files</router-link>
-              <router-link to="/files" class="btn btn-outline-success">View Files</router-link>
-            </div>
+        <div class="card h-100 shadow-lg portal-card text-center">
+          <div class="card-body d-flex flex-column align-items-center justify-content-center py-5">
+            <span class="portal-icon mb-3 bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+              <i class="fas fa-seedling fa-2x text-success"></i>
+            </span>
+            <h4 class="card-title mb-2">Greenhouse Data Upload</h4>
+            <p class="card-text text-muted mb-4">Upload and manage your greenhouse data files (Excel format) for plant growth and environment tracking.</p>
+            <router-link to="/upload-greenhouse" class="btn btn-success btn-lg px-4">Go to Greenhouse Upload</router-link>
           </div>
         </div>
       </div>
       
       <div class="col-md-6 mb-4">
-        <div class="card h-100 border-success">
-          <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">Genetic Mapping Images</h5>
-          </div>
-          <div class="card-body">
-            <p class="card-text">Manage crop images and CSV files for genetic analysis.</p>
-            <ul class="mb-3">
-              <li>Upload and manage crop images with metadata</li>
-              <li>Process CSV mapping files for crop data</li>
-              <li>View gene expression heat maps</li>
-              <li>Analyze genetic markers</li>
-              <li>Compare genetic variations</li>
-            </ul>
-            <div class="d-flex flex-wrap gap-2">
-              <router-link to="/crop-images" class="btn btn-outline-success">Manage Crop Images</router-link>
-              <router-link to="/csv-files" class="btn btn-outline-success">Manage CSV Files</router-link>
-            </div>
+        <div class="card h-100 shadow-lg portal-card text-center">
+          <div class="card-body d-flex flex-column align-items-center justify-content-center py-5">
+            <span class="portal-icon mb-3 bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+              <i class="fas fa-dna fa-2x text-primary"></i>
+            </span>
+            <h4 class="card-title mb-2">Genetic Data Upload</h4>
+            <p class="card-text text-muted mb-4">Upload genetic data (CSV/Excel) and match fruit images for advanced genetic mapping and analysis.</p>
+            <router-link to="/genetic-data" class="btn btn-primary btn-lg px-4">Go to Genetic Upload</router-link>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Encryption Status Section -->
+    <div class="row mt-5">
+      <div class="col-12">
+        <EncryptionStatus />
       </div>
     </div>
   </div>
@@ -58,9 +48,13 @@
 
 <script>
 import { defineComponent } from 'vue'
+import EncryptionStatus from '@/components/EncryptionStatus.vue'
 
 export default defineComponent({
   name: 'HomeView',
+  components: {
+    EncryptionStatus
+  },
   data() {
     return {
       selectedFileId: null
@@ -81,5 +75,30 @@ export default defineComponent({
 
 .card:hover {
   transform: translateY(-5px);
+}
+
+.hero-section {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d33 100%);
+  color: white;
+  padding: 4rem 0;
+  margin-bottom: 2rem;
+}
+
+.portal-card {
+  border: none;
+  border-radius: 1.5rem;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.portal-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  transform: translateY(-4px) scale(1.02);
+}
+
+.portal-icon {
+  width: 72px;
+  height: 72px;
+  font-size: 2.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 </style>

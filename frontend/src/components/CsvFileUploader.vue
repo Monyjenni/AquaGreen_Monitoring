@@ -29,7 +29,7 @@
             :class="{ 'is-invalid': fileError }"
           >
           <div class="invalid-feedback" v-if="fileError">{{ fileError }}</div>
-          <div class="form-text">Upload a CSV file containing sample IDs (like CROP_001, CROP_002) to match with your images.</div>
+          <div class="form-text">Upload a CSV file containing a <code>F5 Code</code> column to match with your fruit images.</div>
         </div>
         
         <div class="d-grid gap-2">
@@ -103,7 +103,7 @@ export default {
         return;
       }
       
-      // Read the file to check for sample_id column and validate CSV format
+      // Read the file to check for F5 Code column and validate CSV format
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
@@ -125,8 +125,8 @@ export default {
             return;
           }
           
-          if (!firstLine.includes('sample_id')) {
-            this.fileError = 'CSV file must contain a sample_id column';
+          if (!firstLine.includes('f5 code')) {
+            this.fileError = 'CSV file must contain a "F5 Code" column';
             this.selectedFile = null;
             return;
           }

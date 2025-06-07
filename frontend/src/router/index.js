@@ -1,19 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import UploadView from '../views/UploadView.vue'
 import FilesView from '../views/FilesView.vue'
 import FileDetailView from '../views/FileDetailView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import store from '../store'
+import GeneticDataUploader from '../components/GeneticDataUploader.vue'
+import UploadPortal from '../views/UploadPortal.vue'
 
 const routes = [
   {
     path: '/',
     name: 'root',
-    redirect: () => {
-      return localStorage.getItem('token') ? '/dashboard' : '/login';
-    }
+    redirect: '/dashboard' // Always redirect to dashboard for development
   },
   {
     path: '/dashboard',
@@ -23,8 +22,14 @@ const routes = [
   },
   {
     path: '/upload',
-    name: 'upload',
-    component: UploadView,
+    name: 'upload-portal',
+    component: UploadPortal,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/upload-greenhouse',
+    name: 'upload-greenhouse',
+    component: () => import('../views/UploadView.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -95,13 +100,6 @@ const routes = [
     meta: { guest: true }
   },
   {
-    path: '/verify-otp',
-    name: 'verify-otp',
-    component: () => import('../views/OtpVerificationView.vue'),
-    props: route => ({ email: route.query.email, returnPath: route.query.returnPath }),
-    meta: { guest: true }
-  },
-  {
     path: '/profile',
     name: 'profile',
     component: () => import('../views/ProfileView.vue'),
@@ -111,6 +109,18 @@ const routes = [
     path: '/visualizations',
     name: 'visualizations',
     component: () => import('../views/DataVisualizationView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/genetic-data',
+    name: 'genetic-data',
+    component: GeneticDataUploader,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/genetic-data-management',
+    name: 'genetic-data-management',
+    component: () => import('../views/GeneticDataView.vue'),
     meta: { requiresAuth: true }
   }
 ]
@@ -123,15 +133,15 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const isAuthenticated = store.getters.isAuthenticated
   
-  // Handle root path redirection
-  if (to.path === '/') {
-    if (isAuthenticated) {
-      next({ name: 'dashboard' })
-    } else {
-      next({ name: 'login' })
-    }
-    return
-  }
+  // Handle root path redirection (now handled by root route config)
+  // if (to.path === '/') {
+  //   if (isAuthenticated) {
+  //     next({ name: 'dashboard' })
+  //   } else {
+  //     next({ name: 'login' })
+  //   }
+  //   return
+  // }
   
   // Route requires authentication
   if (to.matched.some(record => record.meta.requiresAuth)) {

@@ -122,23 +122,10 @@ export default defineComponent({
       if (this.phone) registrationData.phone = this.phone;
       
       try {
-        const response = await this.registerUser(registrationData);
+        await this.registerUser(registrationData);
         
-        // Check if registration requires email verification
-        if (response && response.requires_verification) {
-          // Redirect to OTP verification with the email and registration flag
-          this.$router.push({
-            name: 'verify-otp',
-            query: {
-              email: this.email,
-              returnPath: '/',
-              isRegistration: 'true'
-            }
-          });
-        } else {
-          // Standard redirect for completed registration
-          this.$router.push('/');
-        }
+        // Standard redirect for completed registration
+        this.$router.push('/');
       } catch (error) {
         console.error('Registration error:', error);
         // Log the full error response for debugging

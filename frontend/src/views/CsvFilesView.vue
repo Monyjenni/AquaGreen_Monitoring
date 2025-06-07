@@ -79,7 +79,9 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="file in csvFiles" :key="file.id">
+              <tr v-for="file in csvFiles" :key="file.id" 
+                  :class="{ 'selected-row': selectedFileId === file.id }"
+                  @click="toggleFileSelection(file.id)">
                 <td>{{ file.name }}</td>
                 <td>{{ formatDate(file.uploaded_at) }}</td>
                 <td>
@@ -89,26 +91,46 @@
                   <div class="btn-group btn-group-sm">
                     <base-button 
                       variant="outline-primary" 
-                      @click="viewRelatedImages(file.id)"
+                      @click.stop="viewRelatedImages(file.id)"
                     >
                       View Images
                     </base-button>
                     <base-button 
                       variant="outline-success" 
-                      @click="processFile(file.id)"
+                      @click.stop="processFile(file.id)"
                       :disabled="processing === file.id"
                     >
                       <span v-if="processing === file.id" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
                       <span v-if="processing === file.id" class="visually-hidden">Processing file...</span>
                       Process
                     </base-button>
-                    <!-- Delete button removed as requested -->
+                    <base-button 
+                      variant="outline-info" 
+                      @click.stop="toggleFileSelection(file.id)"
+                    >
+                      <i class="bi bi-bar-chart-line me-1"></i>
+                      {{ selectedFileId === file.id ? 'Hide Chart' : 'Show Chart' }}
+                    </base-button>
                   </div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+        
+        <transition name="fade">
+          <div v-if="selectedFileId" class="mt-4">
+            <base-card>
+              <template #header>
+                <h5 class="mb-0">CSV Data Visualization</h5>
+              </template>
+              <csv-data-visualization 
+                :selected-file-id="selectedFileId"
+                @data-loaded="handleDataLoaded"
+              />
+            </base-card>
+          </div>
+        </transition>
       </div>
     </base-card>
   </div>
@@ -144,13 +166,15 @@ import { mapActions, mapGetters } from 'vuex';
 import BaseCard from '@/components/common/BaseCard.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
 import CsvFileUploader from '@/components/CsvFileUploader.vue';
+import CsvDataVisualization from '@/components/CsvDataVisualization.vue';
 
 export default {
   name: 'CsvFilesView',
   components: {
     BaseCard,
     BaseButton,
-    CsvFileUploader
+    CsvFileUploader,
+    CsvDataVisualization
   },
   data() {
     return {
@@ -158,11 +182,13 @@ export default {
       fileToDelete: null,
       showDeleteConfirmation: false,
       deleting: false,
-      showDeletionWarning: true  // Show warning by default
+      showDeletionWarning: false,
+      selectedFileId: null,
+      visualizationData: null
     };
   },
   computed: {
-    ...mapGetters('crop', ['getCsvFiles', 'isLoading']),
+    ...mapGetters('crop', ['getCsvFiles', 'isLoading', 'getError']),
     csvFiles() {
       return this.getCsvFiles || [];
     },
@@ -175,44 +201,40 @@ export default {
   },
   methods: {
     ...mapActions('crop', ['fetchCsvFiles', 'processCsvFile', 'deleteCsvFile']),
-    
     refreshFiles() {
       this.fetchCsvFiles();
     },
-    
-    handleFileUploaded(file) {
-      this.$toast?.success(`File "${file.title}" uploaded successfully!`);
-      this.refreshFiles();
+    handleFileUploaded() {
+      this.fetchCsvFiles();
     },
-    
-    handleFileProcessed(result) {
-      this.$toast?.success(`File processed successfully! ${result.created} records created.`);
-      this.refreshFiles();
+    handleFileProcessed() {
+      this.fetchCsvFiles();
     },
-    
+    viewRelatedImages(fileId) {
+      this.$router.push({ name: 'CropImagesView', query: { csv_file: fileId } });
+    },
     async processFile(fileId) {
       this.processing = fileId;
-      
       try {
-        const result = await this.processCsvFile(fileId);
-        this.$toast?.success(`CSV file processed: ${result.created} created, ${result.updated} updated`);
-        this.refreshFiles();
+        await this.processCsvFile(fileId);
+        this.fetchCsvFiles(); // Refresh the list after processing
       } catch (error) {
         console.error('Error processing file:', error);
-        this.$toast?.error('Failed to process file. Please try again.');
       } finally {
         this.processing = null;
       }
     },
-    
-    viewRelatedImages(fileId) {
-      // Navigate to the crop images view with a filter for this CSV file
-      this.$router.push({ 
-        name: 'crop-images', 
-        query: { csv_file: fileId } 
-      });
+    toggleFileSelection(fileId) {
+      if (this.selectedFileId === fileId) {
+        this.selectedFileId = null;
+        this.visualizationData = null;
+      } else {
+        this.selectedFileId = fileId;
+      }
     },
-    
+    handleDataLoaded(data) {
+      this.visualizationData = data;
+    },
     formatDate(dateString) {
       if (!dateString) return '';
       const date = new Date(dateString);

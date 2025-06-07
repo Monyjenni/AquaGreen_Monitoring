@@ -1,6 +1,5 @@
 <template>
   <div class="upload-view">
-    <BackButton />
     <div class="mb-4">
       <router-link to="/" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i> Back
@@ -10,7 +9,7 @@
     
     <BaseCard class="mb-4">
       <template #header>
-        <h5 class="card-title mb-0">Upload Excel File</h5>
+        <h5 class="card-title mb-0">Upload Data File</h5>
       </template>
       
       <form @submit.prevent="uploadFile">
@@ -28,16 +27,16 @@
         </div>
         
         <div class="mb-3">
-          <label for="file" class="form-label">Excel File</label>
+          <label for="file" class="form-label">Data File</label>
           <input
             type="file"
             class="form-control"
             id="file"
             @change="handleFileChange"
-            accept=".xlsx,.xls"
+            accept=".xlsx,.xls,.csv"
             required
           />
-          <div class="form-text">Accepted formats: .xlsx, .xls (Excel files only)</div>
+          <div class="form-text">Accepted formats: .xlsx, .xls (Excel files), .csv (CSV files)</div>
         </div>
         
         <div v-if="fileError" class="alert alert-danger">
@@ -121,14 +120,12 @@ import { mapState, mapActions } from 'vuex';
 import * as XLSX from 'xlsx';
 import BaseButton from '@/components/common/BaseButton.vue';
 import BaseCard from '@/components/common/BaseCard.vue';
-import BackButton from '@/components/common/BackButton.vue';
 
 export default {
   name: 'UploadView',
   components: {
     BaseButton,
-    BaseCard,
-    BackButton
+    BaseCard
   },
   data() {
     return {

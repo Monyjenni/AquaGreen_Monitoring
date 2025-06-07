@@ -8,6 +8,9 @@ const cropModule = {
   state: {
     csvFiles: [],
     currentCsvFile: null,
+    csvColumns: [],
+    csvColumnTypes: {},
+    csvData: [],
     cropImages: [],
     currentCropImage: null,
     metadata: [],
@@ -18,6 +21,9 @@ const cropModule = {
   getters: {
     getCsvFiles: state => state.csvFiles,
     getCurrentCsvFile: state => state.currentCsvFile,
+    getCsvColumns: state => state.csvColumns,
+    getCsvColumnTypes: state => state.csvColumnTypes,
+    getCsvData: state => state.csvData,
     getCropImages: state => state.cropImages,
     getCurrentCropImage: state => state.currentCropImage,
     getMetadata: state => state.metadata,
@@ -34,6 +40,15 @@ const cropModule = {
     },
     setCurrentCsvFile(state, file) {
       state.currentCsvFile = file
+    },
+    setCsvColumns(state, columns) {
+      state.csvColumns = columns
+    },
+    setCsvColumnTypes(state, columnTypes) {
+      state.csvColumnTypes = columnTypes
+    },
+    setCsvData(state, data) {
+      state.csvData = data
     },
     setCropImages(state, images) {
       state.cropImages = images
@@ -287,6 +302,56 @@ const cropModule = {
         })
         .catch(error => {
           commit('setError', error.response?.data || 'Failed to add metadata')
+          throw error
+        })
+        .finally(() => {
+          commit('setLoading', false)
+        })
+    },
+    
+    fetchCsvFilePreview({ commit, rootGetters }, fileId) {
+      commit('setLoading', true)
+      commit('setError', null)
+      
+      const headers = rootGetters.isAuthenticated ? { Authorization: `Bearer ${rootGetters.getAuthToken}` } : {}
+      
+      return axios.get(`${API_URL}/csv-files/${fileId}/preview/`, { headers })
+        .then(response => {
+          const { columns, column_types } = response.data;
+          commit('setCsvColumns', columns)
+          commit('setCsvColumnTypes', column_types)
+          return response.data
+        })
+        .catch(error => {
+          commit('setError', error.response?.data || 'Failed to fetch CSV preview')
+          throw error
+        })
+        .finally(() => {
+          commit('setLoading', false)
+        })
+    },
+    
+    fetchCsvData({ commit, rootGetters }, { fileId, selectedColumns = [] }) {
+      commit('setLoading', true)
+      commit('setError', null)
+      
+      const headers = rootGetters.isAuthenticated ? { Authorization: `Bearer ${rootGetters.getAuthToken}` } : {}
+      let params = { file_id: fileId }
+      
+      // Add selected columns to query params if provided
+      if (selectedColumns && selectedColumns.length > 0) {
+        params['columns[]'] = selectedColumns
+      }
+      
+      return axios.get(`${API_URL}/csv-data/`, { headers, params })
+        .then(response => {
+          commit('setCsvColumns', response.data.columns)
+          commit('setCsvData', response.data.rows)
+          commit('setCsvColumnTypes', response.data.column_types)
+          return response.data
+        })
+        .catch(error => {
+          commit('setError', error.response?.data || 'Failed to fetch CSV data')
           throw error
         })
         .finally(() => {

@@ -1,11 +1,13 @@
 <template>
   <div class="home">
     <div class="jumbotron bg-light p-5 rounded mb-4">
-      <h1 class="display-4 text-success">Welcome to AquaGreen</h1>
+      <h1 class="display-4 text-success">Dashboard</h1>
       <hr class="my-4">
-      <p>Upload your Excel files, process data, and visualize greenhouse metrics in one place.</p>
-      <router-link to="/upload" class="btn btn-success btn-lg">Upload Excel File</router-link>
+      <p>Upload your files, visualize data, and analyze greenhouse metrics in one place.</p>
+      <router-link to="/upload" class="btn btn-success btn-lg">Upload Data File</router-link>
     </div>
+    
+
 
     <div class="row mt-5">
       <div class="col-md-6 mb-4">
@@ -60,7 +62,9 @@ import { defineComponent } from 'vue'
 export default defineComponent({
   name: 'HomeView',
   data() {
-    return {}
+    return {
+      selectedFileId: null
+    }
   }
 })
 </script>

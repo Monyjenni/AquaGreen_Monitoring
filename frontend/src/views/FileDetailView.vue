@@ -117,7 +117,7 @@
               <div class="card bg-primary text-white h-100">
                 <div class="card-body">
                   <h5 class="card-title">Processed</h5>
-                  <h3>{{ formatDate(currentFile.processed_at) || 'Yes' }}</h3>
+                  <h3>{{ currentFile.processed ? 'Yes' : 'No' }}</h3>
                 </div>
               </div>
             </div>
@@ -126,6 +126,7 @@
           <!-- Bar chart for simple visualization -->
           <div class="row">
             <div class="col-md-12 mb-4">
+              <h5>Growth Production</h5>
               <canvas ref="barChart"></canvas>
             </div>
           </div>
@@ -935,7 +936,7 @@ export default {
                 data: {
                   labels: labels,
                   datasets: [{
-                    label: 'Sample Data',
+                    label: 'Growth Production',
                     data: data,
                     backgroundColor: '#198754',
                     borderColor: '#157347',

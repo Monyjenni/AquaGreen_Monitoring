@@ -31,6 +31,16 @@
         :chart-data="chartData" 
         :options="chartOptions"
       />
+      <radar-chart 
+        v-else-if="chartType === 'radar'" 
+        :chart-data="chartData" 
+        :options="chartOptions"
+      />
+      <scatter-chart 
+        v-else-if="chartType === 'scatter'" 
+        :chart-data="chartData" 
+        :options="chartOptions"
+      />
     </div>
     
     <div class="chart-description text-muted small mt-2" v-if="description">
@@ -43,13 +53,23 @@
 import LineChart from './LineChart.vue';
 import BarChart from './BarChart.vue';
 import PieChart from './PieChart.vue';
+import RadarChart from './RadarChart.vue';
+import ScatterChart from './ScatterChart.vue';
 
 export default {
   name: 'ChartContainer',
+  mounted() {
+    // Validate chart type against allowed types
+    if (!this.allowedChartTypes.includes(this.chartType) && this.availableChartTypes.length > 0) {
+      this.chartType = this.availableChartTypes[0].value;
+    }
+  },
   components: {
     LineChart,
     BarChart,
-    PieChart
+    PieChart,
+    RadarChart,
+    ScatterChart
   },
   props: {
     title: {
@@ -75,16 +95,36 @@ export default {
     showControls: {
       type: Boolean,
       default: true
+    },
+    allowedChartTypes: {
+      type: Array,
+      default: () => ['line', 'bar', 'pie', 'radar', 'scatter']
     }
   },
   data() {
+    // Define all possible chart types
+    const allChartTypes = [
+      { value: 'line', label: 'Line', icon: 'bi bi-graph-up' },
+      { value: 'bar', label: 'Bar', icon: 'bi bi-bar-chart' },
+      { value: 'pie', label: 'Pie', icon: 'bi bi-pie-chart' },
+      { value: 'radar', label: 'Radar', icon: 'bi bi-bullseye' },
+      { value: 'scatter', label: 'Scatter', icon: 'bi bi-stars' }
+    ];
+    
+    // Filter to only show allowed chart types
+    const availableChartTypes = allChartTypes.filter(type => 
+      this.allowedChartTypes.includes(type.value)
+    );
+    
+    // Make sure initialChartType is in the allowed types
+    let chartType = this.initialChartType;
+    if (!this.allowedChartTypes.includes(this.initialChartType) && availableChartTypes.length > 0) {
+      chartType = availableChartTypes[0].value;
+    }
+    
     return {
-      chartType: this.initialChartType,
-      availableChartTypes: [
-        { value: 'line', label: 'Line', icon: 'bi bi-graph-up' },
-        { value: 'bar', label: 'Bar', icon: 'bi bi-bar-chart' },
-        { value: 'pie', label: 'Pie', icon: 'bi bi-pie-chart' }
-      ]
+      chartType,
+      availableChartTypes
     };
   },
   computed: {

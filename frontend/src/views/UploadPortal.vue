@@ -64,4 +64,4 @@ export default {
   font-size: 2.5rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
-</style> 
+</style>

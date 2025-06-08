@@ -19,7 +19,7 @@
     </div>
     
     <div v-else-if="files.length === 0" class="alert alert-info">
-      <p class="mb-0">No files uploaded yet. <router-link to="/upload" class="alert-link">Upload your first file</router-link>.</p>
+      <p class="mb-0">No files uploaded yet. <router-link to="/upload-greenhouse" class="alert-link">Upload your first file</router-link>.</p>
     </div>
     
     <div v-else>
@@ -90,7 +90,7 @@
       </div>
       
       <div class="mt-4 text-center">
-        <router-link to="/upload" class="btn btn-success">
+        <router-link to="/upload-greenhouse" class="btn btn-success">
           <i class="bi bi-upload me-1"></i> Upload New File
         </router-link>
       </div>

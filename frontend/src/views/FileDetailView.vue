@@ -126,7 +126,7 @@
           <!-- Bar chart for simple visualization -->
           <div class="row">
             <div class="col-md-12 mb-4">
-              <h5>Growth Production</h5>
+              <h5>Nethouse ID Frequency</h5>
               <canvas ref="barChart"></canvas>
             </div>
           </div>
@@ -164,85 +164,66 @@
             <div class="mt-4">
               <h5 class="mb-3">Data Visualization</h5>
               
+              <!-- Advanced Nethouse Analytics Section -->
+              <h5 class="mb-3 mt-4">Advanced Nethouse Analytics</h5>
               <div class="row">
-                <!-- Crop Growth Metrics -->
+                <!-- Nethouse ID Performance Comparison -->
                 <div class="col-md-6 mb-4">
                   <chart-container
-                    v-if="cropGrowthData.datasets.length > 0"
-                    title="Crop Growth Metrics"
-                    :chart-data="cropGrowthData"
+                    v-if="nethousePerformanceData.datasets.length > 0"
+                    title="Nethouse ID Performance Comparison"
+                    :chart-data="nethousePerformanceData"
                     :options="barChartOptions"
-                    description="Comparison of Height and Width by Crop"
+                    description="Average performance metrics by Nethouse ID"
                     initial-chart-type="bar"
                     :showControls="true"
+                    :allowedChartTypes="['bar', 'line']"
                   />
                 </div>
                 
-                <!-- Health Indicators Chart -->
-                <div class="col-md-6 mb-4">
-                  <chart-container
-                    v-if="healthIndicatorsData.datasets.length > 0"
-                    title="Health Indicators"
-                    :chart-data="healthIndicatorsData"
-                    :options="lineChartOptions"
-                    description="NDVI and Health Score over time"
-                    initial-chart-type="line"
-                    :showControls="true"
-                  />
-                </div>
-                
-                <!-- Crop Distribution -->
-                <div class="col-md-6 mb-4">
-                  <chart-container
-                    v-if="cropDistributionData.labels.length > 0"
-                    title="Crop Distribution"
-                    :chart-data="cropDistributionData"
-                    :options="pieChartOptions"
-                    description="Distribution of crops in dataset"
-                    initial-chart-type="pie"
-                    :showControls="true"
-                  />
-                </div>
-                
-                <!-- Growth Stage Distribution -->
-                <div class="col-md-6 mb-4">
-                  <chart-container
-                    v-if="growthStageData.labels.length > 0"
-                    title="Growth Stage Distribution"
-                    :chart-data="growthStageData"
-                    :options="pieChartOptions"
-                    description="Distribution of plant growth stages"
-                    initial-chart-type="pie"
-                    :showControls="true"
-                  />
-                </div>
 
-                <!-- Health Score Categories -->
+                <!-- Environmental Conditions vs. Growth -->
                 <div class="col-md-6 mb-4">
                   <chart-container
-                    v-if="healthCategoriesData.labels.length > 0"
-                    title="Health Score Categories"
-                    :chart-data="healthCategoriesData"
-                    :options="pieChartOptions"
-                    description="Distribution of plants by health score"
-                    initial-chart-type="pie"
-                    :showControls="true"
-                  />
-                </div>
-                
-                <!-- Leaf Count vs Health Score -->
-                <div class="col-md-6 mb-4">
-                  <chart-container
-                    v-if="leafHealthData.datasets.length > 0"
-                    title="Leaf Count vs Health Score"
-                    :chart-data="leafHealthData"
+                    v-if="environmentalVsGrowthData.datasets.length > 0"
+                    title="Environmental Conditions vs. Growth"
+                    :chart-data="environmentalVsGrowthData"
                     :options="scatterChartOptions"
-                    description="Correlation between leaf count and health score"
+                    description="Relationship between environmental factors and growth"
                     initial-chart-type="scatter"
                     :showControls="true"
+                    :allowedChartTypes="['scatter', 'line']"
+                  />
+                </div>
+                
+                <!-- Resource Efficiency by Nethouse -->
+                <div class="col-md-6 mb-4">
+                  <chart-container
+                    v-if="resourceEfficiencyData.datasets.length > 0"
+                    title="Resource Efficiency by Nethouse"
+                    :chart-data="resourceEfficiencyData"
+                    :options="{
+                      plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ${context.raw.toFixed(1)}%` } }
+                      },
+                      scales: {
+                        r: {
+                          min: 0,
+                          max: 100,
+                          ticks: { stepSize: 20 }
+                        }
+                      }
+                    }"
+                    description="Relative utilization efficiency compared between nethouses"
+                    initial-chart-type="radar"
+                    :showControls="true"
+                    :allowedChartTypes="['radar', 'line']"
                   />
                 </div>
               </div>
+              
+              <!-- Standard Crop Analytics Section Removed -->
             </div>
           </div>
         </div>
@@ -343,13 +324,7 @@ export default {
           }
         }
       },
-      pieChartOptions: {
-        plugins: {
-          legend: {
-            position: 'right'
-          }
-        }
-      },
+      // Pie chart options removed as part of chart cleanup
       // Sample financial data - this would typically come from your backend
       financialSummary: {
         income: 12500,
@@ -369,295 +344,533 @@ export default {
         }
       },
       barChartInstance: null,
-      pieChartInstance: null,
       pollingInterval: null
     }
   },
   computed: {
     ...mapState(['currentFile', 'processedData', 'loading', 'error']),
     
-    // Crop Growth Metrics chart data
-    cropGrowthData() {
+    // Nethouse ID Performance Comparison chart
+    nethousePerformanceData() {
       if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
       
-      // Group data by crop type
-      const cropGroups = {};
-      this.processedData.forEach(item => {
-        const cropType = item.Crop || 'Unknown';
-        if (!cropGroups[cropType]) {
-          cropGroups[cropType] = { 
-            heights: [], 
-            widths: [] 
-          };
+      // Detect the column that contains Nethouse IDs
+      let nethouseIdColumn = null;
+      let performanceColumn = null;
+      
+      // Look for column headers first
+      const headers = Object.keys(this.processedData[0] || {});
+      
+      // Find Nethouse ID column
+      for (const header of headers) {
+        if (header && typeof header === 'string' && 
+            (header.toLowerCase().includes('nethouse') || 
+             header.toLowerCase().includes('house') || 
+             header.toLowerCase().includes('id') ||
+             header.toLowerCase().includes('nh'))) {
+          nethouseIdColumn = header;
+          break;
         }
-        
-        // Extract height and width data based on the Excel column names
-        if (item['Height (cm)']) cropGroups[cropType].heights.push(parseFloat(item['Height (cm)']));
-        if (item['Width (cm)']) cropGroups[cropType].widths.push(parseFloat(item['Width (cm)']));
-      });
-      
-      // Prepare labels and datasets
-      const labels = Object.keys(cropGroups);
-      const heightData = [];
-      const widthData = [];
-      
-      labels.forEach(crop => {
-        const heights = cropGroups[crop].heights;
-        const widths = cropGroups[crop].widths;
-        
-        // Calculate averages
-        heightData.push(heights.length ? 
-          heights.reduce((sum, val) => sum + val, 0) / heights.length : 0);
-        widthData.push(widths.length ? 
-          widths.reduce((sum, val) => sum + val, 0) / widths.length : 0);
-      });
-      
-      return {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Average Height (cm)',
-            data: heightData,
-            backgroundColor: 'rgba(75, 192, 192, 0.7)',
-            borderColor: 'rgb(75, 192, 192)',
-            borderWidth: 1
-          },
-          {
-            label: 'Average Width (cm)',
-            data: widthData,
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-            borderColor: 'rgb(54, 162, 235)',
-            borderWidth: 1
-          }
-        ]
-      };
-    },
-    
-    // Health indicators chart data
-    healthIndicatorsData() {
-      if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
-      
-      // Sort by date if available
-      const sortedData = [...this.processedData];
-      if (sortedData[0]['Measurement Date']) {
-        sortedData.sort((a, b) => new Date(a['Measurement Date']) - new Date(b['Measurement Date']));
       }
       
-      // Get dates for labels, limit to a reasonable number of points
-      const maxPoints = 15;
-      const step = Math.max(1, Math.floor(sortedData.length / maxPoints));
-      const filteredData = sortedData.filter((_, index) => index % step === 0);
-      
-      const labels = filteredData.map(item => item['Measurement Date'] || `Plot ${item['Plot ID'] || ''}`);
-      
-      // Extract health indicator data
-      const ndviData = filteredData.map(item => parseFloat(item['NDVI'] || 0));
-      const healthScoreData = filteredData.map(item => parseFloat(item['Health Score'] || 0));
-      const chlorophyllData = filteredData.map(item => parseFloat(item['Chlorophyll Index'] || 0));
-      
-      return {
-        labels: labels,
-        datasets: [
-          {
-            label: 'NDVI',
-            data: ndviData,
-            borderColor: 'rgb(54, 162, 235)',
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            borderWidth: 2,
-            tension: 0.2,
-            fill: true,
-            yAxisID: 'y'
-          },
-          {
-            label: 'Health Score',
-            data: healthScoreData,
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderWidth: 2,
-            tension: 0.2,
-            fill: true,
-            yAxisID: 'y1'
-          },
-          {
-            label: 'Chlorophyll Index',
-            data: chlorophyllData,
-            borderColor: 'rgb(153, 102, 255)',
-            backgroundColor: 'rgba(153, 102, 255, 0.2)',
-            borderWidth: 2,
-            tension: 0.2,
-            fill: true,
-            yAxisID: 'y2'
+      // If we couldn't find by name, look for columns with 3-4 digit numeric values
+      if (!nethouseIdColumn) {
+        for (const header of headers) {
+          let idCandidates = 0;
+          const checkRows = Math.min(10, this.processedData.length);
+          
+          for (let i = 0; i < checkRows; i++) {
+            const value = this.processedData[i][header];
+            if (value && 
+                (typeof value === 'number' || 
+                 (typeof value === 'string' && /^\d{3,4}$/.test(value)))) {
+              idCandidates++;
+            }
           }
-        ]
-      };
-    },
-    
-    // Crop distribution data
-    cropDistributionData() {
-      if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
-      
-      // Count occurrences of different crop types
-      const cropCounts = {};
-      
-      this.processedData.forEach(item => {
-        const cropType = item.Crop || 'Unknown';
-        cropCounts[cropType] = (cropCounts[cropType] || 0) + 1;
-      });
-      
-      return {
-        labels: Object.keys(cropCounts),
-        datasets: [
-          {
-            data: Object.values(cropCounts),
-            backgroundColor: [
-              'rgba(255, 99, 132, 0.7)',
-              'rgba(54, 162, 235, 0.7)',
-              'rgba(255, 206, 86, 0.7)',
-              'rgba(75, 192, 192, 0.7)',
-              'rgba(153, 102, 255, 0.7)',
-              'rgba(255, 159, 64, 0.7)'
-            ],
-            borderColor: [
-              'rgb(255, 99, 132)',
-              'rgb(54, 162, 235)',
-              'rgb(255, 206, 86)',
-              'rgb(75, 192, 192)',
-              'rgb(153, 102, 255)',
-              'rgb(255, 159, 64)'
-            ],
-            borderWidth: 1
+          
+          if (idCandidates > checkRows * 0.7) {
+            nethouseIdColumn = header;
+            break;
           }
-        ]
-      };
-    },
-    
-    // Growth Stage distribution data
-    growthStageData() {
-      if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
+        }
+      }
       
-      // Count occurrences of different growth stages
-      const stageCounts = {};
+      // Find a performance metric column (yield, growth, height, etc.)
+      const performanceColumns = [
+        'yield', 'growth', 'height', 'weight', 'biomass', 'production'
+      ];
       
-      this.processedData.forEach(item => {
-        const growthStage = item['Growth Stage'] || 'Unknown';
-        stageCounts[growthStage] = (stageCounts[growthStage] || 0) + 1;
-      });
-      
-      return {
-        labels: Object.keys(stageCounts),
-        datasets: [
-          {
-            data: Object.values(stageCounts),
-            backgroundColor: [
-              'rgba(75, 192, 192, 0.7)',  // Teal
-              'rgba(153, 102, 255, 0.7)', // Purple
-              'rgba(255, 205, 86, 0.7)',  // Yellow
-              'rgba(54, 162, 235, 0.7)',  // Blue
-              'rgba(255, 99, 132, 0.7)',  // Pink
-              'rgba(201, 203, 207, 0.7)'  // Grey
-            ],
-            borderColor: [
-              'rgb(75, 192, 192)',
-              'rgb(153, 102, 255)',
-              'rgb(255, 205, 86)',
-              'rgb(54, 162, 235)',
-              'rgb(255, 99, 132)',
-              'rgb(201, 203, 207)'
-            ],
-            borderWidth: 1
-          }
-        ]
-      };
-    },
-    
-    // Health Score Categories data
-    healthCategoriesData() {
-      if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
-      
-      // Define health score categories
-      const categories = {
-        'Excellent (90-100)': 0,
-        'Good (75-89)': 0,
-        'Fair (60-74)': 0,
-        'Poor (40-59)': 0,
-        'Critical (<40)': 0
-      };
-      
-      // Count occurrences of different health score categories
-      this.processedData.forEach(item => {
-        const healthScore = parseFloat(item['Health Score'] || 0);
+      for (const metric of performanceColumns) {
+        const matchingHeader = headers.find(h => 
+          h && typeof h === 'string' && h.toLowerCase().includes(metric));
         
-        if (healthScore >= 90) {
-          categories['Excellent (90-100)']++;
-        } else if (healthScore >= 75) {
-          categories['Good (75-89)']++;
-        } else if (healthScore >= 60) {
-          categories['Fair (60-74)']++;
-        } else if (healthScore >= 40) {
-          categories['Poor (40-59)']++;
-        } else {
-          categories['Critical (<40)']++;
+        if (matchingHeader) {
+          performanceColumn = matchingHeader;
+          break;
+        }
+      }
+      
+      // If no specific performance column found, use the first numeric column as fallback
+      if (!performanceColumn) {
+        for (const header of headers) {
+          // Skip the Nethouse ID column
+          if (header === nethouseIdColumn) continue;
+          
+          const firstValue = this.processedData[0][header];
+          if (firstValue && (typeof firstValue === 'number' || !isNaN(parseFloat(firstValue)))) {
+            performanceColumn = header;
+            break;
+          }
+        }
+      }
+      
+      // If we have both columns, prepare the data
+      if (nethouseIdColumn && performanceColumn) {
+        // Group data by Nethouse ID
+        const nethouseData = {};
+        
+        this.processedData.forEach(item => {
+          if (item[nethouseIdColumn]) {
+            const nethouseId = String(item[nethouseIdColumn]);
+            if (!nethouseData[nethouseId]) {
+              nethouseData[nethouseId] = {
+                sum: 0,
+                count: 0
+              };
+            }
+            
+            // Extract performance data
+            const value = parseFloat(item[performanceColumn]);
+            if (!isNaN(value)) {
+              nethouseData[nethouseId].sum += value;
+              nethouseData[nethouseId].count += 1;
+            }
+          }
+        });
+        
+        // Prepare labels and data (sort numerically by nethouse ID)
+        const nethouseIds = Object.keys(nethouseData).sort((a, b) => parseInt(a) - parseInt(b));
+        const performanceData = nethouseIds.map(id => {
+          return nethouseData[id].count > 0 ? 
+            nethouseData[id].sum / nethouseData[id].count : 0;
+        });
+        
+        return {
+          labels: nethouseIds,
+          datasets: [
+            {
+              label: `Average ${this.formatColumnName(performanceColumn)}`,
+              data: performanceData,
+              backgroundColor: 'rgba(40, 167, 69, 0.7)',
+              borderColor: 'rgb(40, 167, 69)',
+              borderWidth: 1
+            }
+          ]
+        };
+      }
+      
+      // Return empty dataset if we couldn't find appropriate columns
+      return { 
+        labels: ['No Nethouse Data Found'],
+        datasets: [{
+          label: 'No Data',
+          data: [0],
+          backgroundColor: 'rgba(200, 200, 200, 0.7)'
+        }]
+      };
+    },
+    
+    // Environmental Conditions vs. Growth (Scatter plot)
+    environmentalVsGrowthData() {
+      if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
+      
+      // Look for column headers
+      const headers = Object.keys(this.processedData[0] || {});
+      
+      // Find necessary columns: environment factors, growth metrics, and nethouse ID
+      let nethouseIdColumn = null;
+      let growthColumn = null;
+      let environmentColumns = [];
+      
+      // Find Nethouse ID column
+      for (const header of headers) {
+        if (header && typeof header === 'string' && 
+            (header.toLowerCase().includes('nethouse') || 
+             header.toLowerCase().includes('house') || 
+             header.toLowerCase().includes('id') ||
+             header.toLowerCase().includes('nh'))) {
+          nethouseIdColumn = header;
+          break;
+        }
+      }
+      
+      // If we couldn't find by name, look for columns with 3-4 digit numeric values
+      if (!nethouseIdColumn) {
+        for (const header of headers) {
+          let idCandidates = 0;
+          const checkRows = Math.min(10, this.processedData.length);
+          
+          for (let i = 0; i < checkRows; i++) {
+            const value = this.processedData[i][header];
+            if (value && 
+                (typeof value === 'number' || 
+                 (typeof value === 'string' && /^\d{3,4}$/.test(value)))) {
+              idCandidates++;
+            }
+          }
+          
+          if (idCandidates > checkRows * 0.7) {
+            nethouseIdColumn = header;
+            break;
+          }
+        }
+      }
+      
+      // Find growth metric column
+      for (const header of headers) {
+        if (header && typeof header === 'string' && 
+            (header.toLowerCase().includes('growth') || 
+             header.toLowerCase().includes('yield') ||
+             header.toLowerCase().includes('production') ||
+             header.toLowerCase().includes('biomass'))) {
+          growthColumn = header;
+          break;
+        }
+      }
+      
+      // If we couldn't find a specific growth column, try height/width
+      if (!growthColumn) {
+        for (const header of headers) {
+          if (header && typeof header === 'string' && 
+              (header.toLowerCase().includes('height') || 
+               header.toLowerCase().includes('width') ||
+               header.toLowerCase().includes('weight'))) {
+            growthColumn = header;
+            break;
+          }
+        }
+      }
+      
+      // Find environmental columns
+      for (const header of headers) {
+        if (header && typeof header === 'string') {
+          if (header.toLowerCase().includes('temp') || 
+              header.toLowerCase().includes('humidity') ||
+              header.toLowerCase().includes('co2') ||
+              header.toLowerCase().includes('light') ||
+              header.toLowerCase().includes('ph') ||
+              header.toLowerCase().includes('nutrient') ||
+              header.toLowerCase().includes('water')) {
+            environmentColumns.push(header);
+          }
+        }
+      }
+      
+      // If we don't have the minimum data needed, return empty dataset
+      if (!nethouseIdColumn || !growthColumn || environmentColumns.length === 0) {
+        return { 
+          labels: ['No Environmental Data Available'],
+          datasets: [{
+            label: 'No Data',
+            data: [0],
+            backgroundColor: 'rgba(200, 200, 200, 0.7)'
+          }]
+        };
+      }
+      
+      // Select best environmental column (prefer temperature if available)
+      let selectedEnvColumn = environmentColumns.find(col => 
+        col.toLowerCase().includes('temp')) || environmentColumns[0];
+      
+      // Create color palette for nethouses
+      const nethouseColors = {
+        '112': 'rgba(255, 99, 132, 1)', // red
+        '113': 'rgba(54, 162, 235, 1)',  // blue
+        '114': 'rgba(255, 206, 86, 1)', // yellow
+        '115': 'rgba(75, 192, 192, 1)',  // green
+        '116': 'rgba(153, 102, 255, 1)', // purple
+        '117': 'rgba(255, 159, 64, 1)'  // orange
+      };
+      
+      // Collect unique nethouses
+      const uniqueNethouses = new Set();
+      this.processedData.forEach(item => {
+        if (item[nethouseIdColumn]) {
+          uniqueNethouses.add(String(item[nethouseIdColumn]));
+        }
+      });
+      
+      // Create one dataset per nethouse
+      const datasets = [];
+      
+      Array.from(uniqueNethouses).forEach(nethouseId => {
+        // Find data points for this nethouse
+        const dataPoints = this.processedData
+          .filter(item => String(item[nethouseIdColumn]) === nethouseId)
+          .map(item => {
+            // Only include points where both values are present and numeric
+            const envValue = parseFloat(item[selectedEnvColumn]);
+            const growthValue = parseFloat(item[growthColumn]);
+            
+            if (!isNaN(envValue) && !isNaN(growthValue)) {
+              return {
+                x: envValue,
+                y: growthValue
+              };
+            }
+            return null;
+          })
+          .filter(point => point !== null);
+        
+        if (dataPoints.length > 0) {
+          // Get color for this nethouse
+          const color = nethouseColors[nethouseId] || 
+            `rgba(${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)}, 1)`;
+          
+          datasets.push({
+            label: `NH ${nethouseId}`,
+            data: dataPoints,
+            backgroundColor: color.replace('1)', '0.6)'), // Semi-transparent for scatter points
+            borderColor: color,
+            borderWidth: 1,
+            pointRadius: 5,
+            pointHoverRadius: 7
+          });
         }
       });
       
       return {
-        labels: Object.keys(categories),
-        datasets: [
-          {
-            data: Object.values(categories),
-            backgroundColor: [
-              'rgba(75, 192, 192, 0.7)',   // Teal - Excellent
-              'rgba(54, 162, 235, 0.7)',   // Blue - Good
-              'rgba(255, 205, 86, 0.7)',   // Yellow - Fair
-              'rgba(255, 159, 64, 0.7)',   // Orange - Poor
-              'rgba(255, 99, 132, 0.7)'    // Red - Critical
-            ],
-            borderColor: [
-              'rgb(75, 192, 192)',
-              'rgb(54, 162, 235)',
-              'rgb(255, 205, 86)',
-              'rgb(255, 159, 64)',
-              'rgb(255, 99, 132)'
-            ],
-            borderWidth: 1
+        // Scatter doesn't use labels in the same way
+        labels: [],
+        datasets: datasets,
+        // Add custom options for the scatter chart
+        options: {
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: this.formatColumnName(selectedEnvColumn)
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: this.formatColumnName(growthColumn)
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: `${this.formatColumnName(selectedEnvColumn)} vs ${this.formatColumnName(growthColumn)}`,
+              font: {
+                size: 16
+              }
+            }
           }
-        ]
+        }
       };
     },
     
-    // Leaf Count vs Health Score scatter plot
-    leafHealthData() {
+    // Crop Growth Metrics and Health Indicators charts have been removed
+    
+    
+    // Resource Efficiency by Nethouse (Radar chart)
+    resourceEfficiencyData() {
       if (!this.processedData || !this.processedData.length) return { labels: [], datasets: [] };
       
-      // Extract data points for the scatter plot
-      const dataPoints = this.processedData
-        .filter(item => item['Leaf Count'] && item['Health Score'])
-        .map(item => ({
-          x: parseFloat(item['Leaf Count']),
-          y: parseFloat(item['Health Score'])
-        }));
+      // Look for column headers
+      const headers = Object.keys(this.processedData[0] || {});
+      
+      // Find Nethouse ID column
+      let nethouseIdColumn = null;
+      const resourceColumns = [];
+      
+      // Find Nethouse ID column
+      for (const header of headers) {
+        if (header && typeof header === 'string' && 
+            (header.toLowerCase().includes('nethouse') || 
+             header.toLowerCase().includes('house') || 
+             header.toLowerCase().includes('id') ||
+             header.toLowerCase().includes('nh'))) {
+          nethouseIdColumn = header;
+          break;
+        }
+      }
+      
+      // If we couldn't find by name, look for columns with 3-4 digit numeric values
+      if (!nethouseIdColumn) {
+        for (const header of headers) {
+          let idCandidates = 0;
+          const checkRows = Math.min(10, this.processedData.length);
+          
+          for (let i = 0; i < checkRows; i++) {
+            const value = this.processedData[i][header];
+            if (value && 
+                (typeof value === 'number' || 
+                 (typeof value === 'string' && /^\d{3,4}$/.test(value)))) {
+              idCandidates++;
+            }
+          }
+          
+          if (idCandidates > checkRows * 0.7) {
+            nethouseIdColumn = header;
+            break;
+          }
+        }
+      }
+      
+      // Look for resource efficiency related columns
+      const resourceKeywords = [
+        'water', 'nutrient', 'light', 'electricity', 'energy', 
+        'fertilizer', 'efficiency', 'consumption', 'usage', 'co2', 
+        'yield', 'productivity'
+      ];
+      
+      // Find resource columns
+      for (const header of headers) {
+        if (header && typeof header === 'string') {
+          for (const keyword of resourceKeywords) {
+            if (header.toLowerCase().includes(keyword)) {
+              resourceColumns.push(header);
+              break; // Break out of inner loop once match found
+            }
+          }
+        }
+      }
+      
+      // Limit to max 6 resources for readability
+      const maxResources = 6;
+      const selectedResources = resourceColumns.slice(0, maxResources);
+      
+      // If we don't have the minimum data needed, return empty dataset
+      if (!nethouseIdColumn || selectedResources.length < 3) {
+        return { 
+          labels: ['Insufficient Resource Data Available'],
+          datasets: [{
+            label: 'No Data',
+            data: [0],
+            backgroundColor: 'rgba(200, 200, 200, 0.2)',
+            borderColor: 'rgba(200, 200, 200, 0.7)',
+          }]
+        };
+      }
+      
+      // Collect unique nethouses
+      const uniqueNethouses = new Set();
+      this.processedData.forEach(item => {
+        if (item[nethouseIdColumn]) {
+          uniqueNethouses.add(String(item[nethouseIdColumn]));
+        }
+      });
+      
+      // Create color palette for nethouses
+      const nethouseColors = {
+        '112': 'rgba(255, 99, 132, 0.7)', // red
+        '113': 'rgba(54, 162, 235, 0.7)',  // blue
+        '114': 'rgba(255, 206, 86, 0.7)', // yellow
+        '115': 'rgba(75, 192, 192, 0.7)',  // green
+        '116': 'rgba(153, 102, 255, 0.7)', // purple
+        '117': 'rgba(255, 159, 64, 0.7)'  // orange
+      };
+      
+      // Normalize data across all resources
+      const normalizedData = {};
+      
+      // Find min and max for each resource
+      const resourceRanges = {};
+      selectedResources.forEach(resource => {
+        const values = this.processedData
+          .map(item => parseFloat(item[resource]))
+          .filter(val => !isNaN(val));
+          
+        if (values.length > 0) {
+          resourceRanges[resource] = {
+            min: Math.min(...values),
+            max: Math.max(...values)
+          };
+        }
+      });
+      
+      // Calculate average values per nethouse and resource
+      Array.from(uniqueNethouses).forEach(nethouseId => {
+        // Filter data for this nethouse
+        const nethouseData = this.processedData.filter(item => 
+          String(item[nethouseIdColumn]) === nethouseId
+        );
+        
+        if (nethouseData.length > 0) {
+          normalizedData[nethouseId] = {};
+          
+          // Calculate average for each resource
+          selectedResources.forEach(resource => {
+            const values = nethouseData
+              .map(item => parseFloat(item[resource]))
+              .filter(val => !isNaN(val));
+              
+            if (values.length > 0) {
+              const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+              
+              // Normalize to 0-100 scale
+              const range = resourceRanges[resource];
+              if (range && range.max !== range.min) {
+                // For efficiency metrics, higher might be better, so normalize properly
+                // Reverse the normalization for consumption metrics (lower is better)
+                if (resource.toLowerCase().includes('consumption') || 
+                    resource.toLowerCase().includes('usage')) {
+                  // Lower is better, invert the scale
+                  normalizedData[nethouseId][resource] = 
+                    100 - (((avg - range.min) / (range.max - range.min)) * 100);
+                } else {
+                  // Higher is better (e.g., efficiency, productivity)
+                  normalizedData[nethouseId][resource] = 
+                    ((avg - range.min) / (range.max - range.min)) * 100;
+                }
+              } else {
+                normalizedData[nethouseId][resource] = 50; // Default mid-point if all values are the same
+              }
+            }
+          });
+        }
+      });
+      
+      // Create datasets for radar chart
+      const datasets = [];
+      Object.keys(normalizedData).forEach(nethouseId => {
+        const resourceData = [];
+        selectedResources.forEach(resource => {
+          resourceData.push(normalizedData[nethouseId][resource] || 0);
+        });
+        
+        // Get color for this nethouse
+        const color = nethouseColors[nethouseId] || 
+          `rgba(${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)}, 0.7)`;
+        
+        const borderColor = color.replace('0.7)', '1)');
+        
+        datasets.push({
+          label: `Nethouse ${nethouseId}`,
+          data: resourceData,
+          backgroundColor: color,
+          borderColor: borderColor,
+          borderWidth: 1,
+          pointRadius: 3,
+          pointBackgroundColor: borderColor
+        });
+      });
       
       return {
-        labels: [],  // Scatter plots don't need labels
-        datasets: [
-          {
-            label: 'Leaf Count vs Health Score',
-            data: dataPoints,
-            backgroundColor: 'rgba(75, 192, 192, 0.7)',
-            borderColor: 'rgb(75, 192, 192)',
-            pointRadius: 5,
-            pointHoverRadius: 8
-          }
-        ]
+        labels: selectedResources.map(resource => this.formatColumnName(resource)),
+        datasets: datasets
       };
     }
   },
   mounted() {
-    this.fetchFileData()
-    this.startDataPolling()
+    this.fetchFileData();
+    this.startDataPolling();
   },
   beforeUnmount() {
-    this.stopDataPolling()
+    this.stopDataPolling();
   },
   methods: {
     ...mapActions(['fetchFile', 'fetchProcessedData', 'processFile', 'deleteFile']),
@@ -689,10 +902,10 @@ export default {
             
             // Only attempt to generate charts if we have data
             if (this.processedData && this.processedData.length > 0) {
-              // Small delay to ensure DOM is updated before chart generation
+              // Longer delay to ensure DOM is fully updated before chart generation
               setTimeout(() => {
                 this.generateDummyCharts();
-              }, 200);
+              }, 500);
             }
           } catch (processedDataError) {
             console.error('Error fetching processed data:', processedDataError);
@@ -875,44 +1088,92 @@ export default {
       document.body.removeChild(link)
     },
     generateDummyCharts() {
-      // Import Chart.js dynamically to avoid SSR issues
-      import('chart.js').then((ChartModule) => {
-        // Wait for the next tick to ensure DOM is updated
+      // Dynamically import Chart.js to reduce initial bundle size
+      import('chart.js').then(ChartModule => {
+        // Double-ensure the DOM is ready with nextTick and requestAnimationFrame
         this.$nextTick(() => {
-          try {
-            // Get the correct Chart constructor from the module
-            // Handle different module formats (ESM vs CommonJS)
-            const Chart = ChartModule.Chart || ChartModule.default || ChartModule;
+          requestAnimationFrame(() => {
+            try {
+              // Get the correct Chart constructor from the module
+              // Handle different module formats (ESM vs CommonJS)
+              const Chart = ChartModule.Chart || ChartModule.default || ChartModule;
 
-            // Create bar chart
-            if (this.$refs.barChart) {
-              // Destroy existing chart instance if it exists
-              if (this.barChartInstance && typeof this.barChartInstance.destroy === 'function') {
-                this.barChartInstance.destroy();
+              // Create bar chart
+              if (this.$refs.barChart) {
+                // Destroy existing chart instance if it exists
+                if (this.barChartInstance && typeof this.barChartInstance.destroy === 'function') {
+                  this.barChartInstance.destroy();
+                }
+                
+                // Count Nethouse IDs from all processed data
+                const nethouseIdCounts = {};
+                const labels = [];
+                const data = [];
+                
+                if (this.processedData && this.processedData.length > 0) {
+                  // First, try to identify which column might contain Nethouse IDs
+                  const keys = Object.keys(this.processedData[0]);
+                let nethouseIdColumn = null;
+                
+                // Look for columns with names containing variations of 'nethouse', 'house', 'id', etc.
+                const possibleColumns = keys.filter(key => 
+                  key && typeof key === 'string' && 
+                  (key.toLowerCase().includes('nethouse') || 
+                   key.toLowerCase().includes('house') || 
+                   key.toLowerCase().includes('id') ||
+                   key.toLowerCase().includes('nh')));
+                
+                if (possibleColumns.length > 0) {
+                  // Use the first identified column
+                  nethouseIdColumn = possibleColumns[0];
+                } else {
+                  // If no obvious column name, scan all columns for numeric values that look like IDs
+                  // For this example, we'll assume they are 3-digit numbers like 112, 113, etc.
+                  for (let colIdx = 0; colIdx < keys.length; colIdx++) {
+                    const key = keys[colIdx];
+                    // Check first few rows to see if this column has values that look like Nethouse IDs
+                    let idCandidates = 0;
+                    const checkRows = Math.min(10, this.processedData.length);
+                    
+                    for (let rowIdx = 0; rowIdx < checkRows; rowIdx++) {
+                      const row = this.processedData[rowIdx];
+                      const val = row[key];
+                      if (val && 
+                          (typeof val === 'number' || 
+                           (typeof val === 'string' && /^\d{3,4}$/.test(val)))) {
+                        idCandidates++;
+                      }
+                    }
+                    
+                    // If most rows have something that looks like an ID in this column, use it
+                    if (idCandidates > checkRows * 0.7) {
+                      nethouseIdColumn = key;
+                      break;
+                    }
+                  }
+                }
+                
+                // If we found a column that likely contains Nethouse IDs, count them
+                if (nethouseIdColumn) {
+                  // Count occurrences of each unique ID
+                  this.processedData.forEach(row => {
+                    if (row[nethouseIdColumn]) {
+                      const nethouseId = String(row[nethouseIdColumn]); // Convert to string to ensure consistent keys
+                      nethouseIdCounts[nethouseId] = (nethouseIdCounts[nethouseId] || 0) + 1;
+                    }
+                  });
+                  
+                  // Convert the counts to arrays for the chart
+                  Object.keys(nethouseIdCounts).sort().forEach(id => {
+                    labels.push(id);
+                    data.push(nethouseIdCounts[id]);
+                  });
+                }
               }
               
-              // Generate dummy data based on the first few columns of processed data
-              const labels = [];
-              const data = [];
-              
-              if (this.processedData && this.processedData.length > 0) {
-                // Get first 5 rows for sample data
-                const sampleData = this.processedData.slice(0, 5);
-                const keys = Object.keys(sampleData[0]).slice(0, 5); // First 5 fields
-                
-                // Use first column as labels (often dates, IDs, etc)
-                sampleData.forEach(row => {
-                  labels.push(row[keys[0]]);
-                });
-                
-                // Use second column as data values if it's numeric
-                sampleData.forEach(row => {
-                  const val = row[keys[1]];
-                  data.push(isNaN(val) ? Math.floor(Math.random() * 100) : parseFloat(val));
-                });
-              } else {
-                // If no data, use dummy values
-                labels.push('Sample 1', 'Sample 2', 'Sample 3', 'Sample 4', 'Sample 5');
+              // If no Nethouse IDs were found, use dummy data
+              if (labels.length === 0) {
+                labels.push('112', '113', '114', '115', '116');
                 data.push(65, 59, 80, 81, 56);
               }
 
@@ -924,9 +1185,20 @@ export default {
               }
               
               // Make sure we have a valid 2D context before creating the chart
-              const ctx = barCanvas.getContext('2d');
-              if (!ctx) {
-                console.warn('Failed to get 2D context from bar chart canvas');
+              let ctx;
+              try {
+                ctx = barCanvas.getContext('2d');
+                if (!ctx) {
+                  console.warn('Failed to get 2D context from bar chart canvas');
+                  return;
+                }
+                // Verify the context has required methods
+                if (typeof ctx.save !== 'function') {
+                  console.warn('Canvas context missing required methods');
+                  return;
+                }
+              } catch (ctxError) {
+                console.error('Error getting canvas context:', ctxError);
                 return;
               }
               
@@ -936,7 +1208,7 @@ export default {
                 data: {
                   labels: labels,
                   datasets: [{
-                    label: 'Growth Production',
+                    label: 'Nethouse ID Frequency',
                     data: data,
                     backgroundColor: '#198754',
                     borderColor: '#157347',
@@ -947,80 +1219,11 @@ export default {
               });
             }
             
-            // Create pie chart with similar safety checks
-            if (this.$refs.pieChart) {
-              // Destroy existing chart instance if it exists
-              if (this.pieChartInstance && typeof this.pieChartInstance.destroy === 'function') {
-                this.pieChartInstance.destroy();
-              }
-              
-              // Ensure the canvas element exists and has dimensions
-              const pieCanvas = this.$refs.pieChart;
-              if (!pieCanvas || pieCanvas.offsetWidth === 0 || pieCanvas.offsetHeight === 0) {
-                console.warn('Pie chart canvas not properly initialized');
-                return;
-              }
-              
-              // Make sure we have a valid 2D context before creating the chart
-              const ctx = pieCanvas.getContext('2d');
-              if (!ctx) {
-                console.warn('Failed to get 2D context from pie chart canvas');
-                return;
-              }
-              
-              // Generate dummy data for pie chart
-              let pieLabels = [];
-              let pieData = [];
-              
-              if (this.processedData && this.processedData.length > 0) {
-                // Get unique values from third column if available
-                const keys = Object.keys(this.processedData[0]);
-                if (keys.length >= 3) {
-                  const categoryField = keys[2];
-                  const categories = {};
-                  
-                  // Count occurrences of each category
-                  this.processedData.forEach(row => {
-                    const category = row[categoryField] || 'Unknown';
-                    categories[category] = (categories[category] || 0) + 1;
-                  });
-                  
-                  // Convert to arrays for chart
-                  pieLabels = Object.keys(categories);
-                  pieData = Object.values(categories);
-                } else {
-                  // Fallback to dummy categories
-                  pieLabels = ['Category A', 'Category B', 'Category C'];
-                  pieData = [300, 50, 100];
-                }
-              } else {
-                // If no data, use dummy values
-                pieLabels = ['Red', 'Blue', 'Yellow', 'Green', 'Purple'];
-                pieData = [12, 19, 3, 5, 2];
-              }
-              
-              // Random colors for pie segments
-              const backgroundColors = pieLabels.map(() => {
-                return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.7)`;
-              });
-              
-              // Create the chart
-              this.pieChartInstance = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                  labels: pieLabels,
-                  datasets: [{
-                    data: pieData,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 1
-                  }]
-                },
-                options: this.pieChartOptions
-              });
-            }
+            // Pie chart removed as part of chart cleanup
           } catch (error) {
             console.error('Error creating charts:', error);
           }
+          });
         });
       }).catch(error => {
         console.error('Failed to load Chart.js:', error);

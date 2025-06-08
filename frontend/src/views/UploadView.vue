@@ -33,10 +33,10 @@
             class="form-control"
             id="file"
             @change="handleFileChange"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls"
             required
           />
-          <div class="form-text">Accepted formats: .xlsx, .xls (Excel files), .csv (CSV files)</div>
+          <div class="form-text">Accepted formats: .xlsx, .xls (Excel files)</div>
         </div>
         
         <div v-if="fileError" class="alert alert-danger">
@@ -80,6 +80,27 @@
             <tbody>
               <tr v-for="(row, idx) in previewData" :key="idx">
                 <td v-for="header in Object.keys(row)" :key="header">{{ row[header] }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div v-if="nethouseIds && Object.keys(nethouseIds).length > 0" class="mt-4">
+          <h5>Nethouse ID Summary</h5>
+          <div class="alert alert-info">
+            <p class="mb-2"><strong>Total Nethouse IDs found:</strong> {{ Object.keys(nethouseIds).length }}</p>
+          </div>
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Nethouse ID</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(count, nethouseId) in nethouseIds" :key="nethouseId">
+                <td>{{ nethouseId }}</td>
+                <td>{{ count }}</td>
               </tr>
             </tbody>
           </table>
@@ -137,6 +158,8 @@ export default {
       previewError: null,
       isUploading: false,
       uploadProgress: 0,
+      nethouseIds: null,
+      nethouseIdColumnName: null
     };
   },
   computed: {
@@ -153,16 +176,21 @@ export default {
         return;
       }
       
-      // Check file type
-      const validTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-      if (!validTypes.includes(selectedFile.type)) {
+      const validTypes = [
+        'application/vnd.ms-excel', 
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      
+      const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
+      const isValidExtension = ['xlsx', 'xls'].includes(fileExtension);
+      
+      if (!validTypes.includes(selectedFile.type) && !isValidExtension) {
         this.fileError = 'Invalid file type. Please upload an Excel file (.xlsx or .xls)';
         this.file = null;
         return;
       }
       
-      // Check file size (10MB max)
-      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      const maxSize = 10 * 1024 * 1024;  
       if (selectedFile.size > maxSize) {
         this.fileError = 'File is too large. Maximum size is 10MB';
         this.file = null;
@@ -192,6 +220,9 @@ export default {
           const worksheet = workbook.Sheets[firstSheet];
           const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           const headers = json[0] || [];
+          
+          this.processNethouseIds(json, headers);
+          
           const rows = json.slice(1, 6);
           const result = rows.map(row => {
             const obj = {};
@@ -206,13 +237,63 @@ export default {
         reader.readAsArrayBuffer(file);
       });
     },
+    
+    processNethouseIds(json, headers) {
+      this.nethouseIds = {};
+      this.nethouseIdColumnName = null;
+      
+      if (json.length <= 1) return;  
+      
+      const possibleColumns = headers.filter(header => 
+        header && typeof header === 'string' && 
+        (header.toLowerCase().includes('nethouse') || 
+         header.toLowerCase().includes('house') || 
+         header.toLowerCase().includes('id') ||
+         header.toLowerCase().includes('nh')));
+      
+      let nethouseIdColumn = null;
+      
+      if (possibleColumns.length > 0) {
+        nethouseIdColumn = headers.indexOf(possibleColumns[0]);
+        this.nethouseIdColumnName = possibleColumns[0];
+      } else {
+        for (let colIdx = 0; colIdx < headers.length; colIdx++) {
+          let idCandidates = 0;
+          const checkRows = Math.min(10, json.length - 1);  
+          
+          for (let rowIdx = 1; rowIdx <= checkRows; rowIdx++) {
+            const row = json[rowIdx];
+            if (row && row[colIdx] && 
+                (typeof row[colIdx] === 'number' || 
+                 (typeof row[colIdx] === 'string' && /^\d{3,4}$/.test(row[colIdx])))) {
+              idCandidates++;
+            }
+          }
+          
+          if (idCandidates > checkRows * 0.7) {
+            nethouseIdColumn = colIdx;
+            this.nethouseIdColumnName = headers[colIdx];
+            break;
+          }
+        }
+      }
+      
+      if (nethouseIdColumn !== null) {
+        for (let i = 1; i < json.length; i++) {
+          const row = json[i];
+          if (row && row[nethouseIdColumn]) {
+            const nethouseId = String(row[nethouseIdColumn]);  
+            this.nethouseIds[nethouseId] = (this.nethouseIds[nethouseId] || 0) + 1;
+          }
+        }
+      }
+    },
     async uploadFile() {
       if (!this.file) {
         this.$toast?.error('Please select a file to upload');
         return;
       }
 
-      // Check if file is empty
       if (this.file.size === 0) {
         this.$toast?.error('File is empty. Please select a valid file.');
         return;
@@ -228,26 +309,21 @@ export default {
         
         const response = await this.$store.dispatch('uploadFile', formData);
         
-        // Handle success
         this.$toast?.success('File uploaded successfully');
         
-        // Navigate directly to the file detail view instead of the files list
         if (response && response.id) {
           this.$router.push(`/files/${response.id}`);
         } else {
           this.$router.push('/files');
         }
       } catch (error) {
-        // Handle error
         console.error('Upload error:', error.response?.data || error);
         
-        // Display structured error messages
         if (error.response?.data?.error) {
           this.$toast?.error(`Error: ${error.response.data.error}`);
         } else if (error.response?.data?.detail) {
           this.$toast?.error(`Error: ${error.response.data.detail}`);
         } else if (error.response?.data) {
-          // If it's an object with multiple errors
           if (typeof error.response.data === 'object') {
             const errorMsg = Object.entries(error.response.data)
               .map(([key, value]) => `${key}: ${value}`)

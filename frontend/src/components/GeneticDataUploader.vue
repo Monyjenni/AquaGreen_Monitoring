@@ -103,52 +103,81 @@
             <div v-else>
               <div class="alert alert-info">
                 <i class="fas fa-info-circle me-1"></i>
-                Upload exactly <strong>{{ totalRecords }} images</strong> to match your genetic records
+                <strong>Important:</strong> Please name your images to match F5 codes (e.g., "F5-A001.jpg") for automatic matching.
+                Images will be mapped to genetic records based on F5 code, regardless of upload order.
               </div>
               
               <form @submit.prevent="uploadImages">
                 <div class="mb-3">
                   <label for="fruitImages" class="form-label">Fruit Images</label>
-                  <input
-                    type="file"
-                    class="form-control"
-                    id="fruitImages"
-                    accept="image/*"
-                    multiple
-                    @change="handleImagesChange"
-                    :class="{ 'is-invalid': imagesError }"
-                  >
-                  <div class="invalid-feedback" v-if="imagesError">{{ imagesError }}</div>
-                  <div class="form-text">
-                    Selected: {{ selectedImages.length }} of {{ totalRecords }} required images
+                  <div class="form-group">
+                    <input
+                      type="file"
+                      class="form-control mb-3"
+                      @change="handleImagesChange"
+                      multiple
+                      accept="image/*"
+                      :disabled="uploadingImages"
+                    >
+                    
+                    <!-- Mapping Status Summary -->
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-2 border rounded">
+                      <div>
+                        <div>Selected: <strong>{{ selectedImages.length }}</strong> images</div>
+                        <div>Mapped by F5 code: <strong>{{ Object.keys(imagesByF5Code).length }}</strong> images</div>
+                      </div>
+                      <div class="text-end">
+                        <span class="badge" :class="{
+                          'bg-success': selectedImages.length > 0 && Object.keys(imagesByF5Code).length === selectedImages.length,
+                          'bg-warning': selectedImages.length > 0 && Object.keys(imagesByF5Code).length > 0 && Object.keys(imagesByF5Code).length < selectedImages.length,
+                          'bg-danger': selectedImages.length > 0 && Object.keys(imagesByF5Code).length === 0
+                        }">
+                          {{ selectedImages.length > 0 ? (Object.keys(imagesByF5Code).length / selectedImages.length * 100).toFixed(0) + '% Mapped' : 'No Images' }}
+                        </span>
+                      </div>
+                    </div>
+                  
+                    <div v-if="imagesError" class="alert alert-danger mb-3">
+                      <i class="fas fa-exclamation-circle me-2"></i>
+                      {{ imagesError }}
+                    </div>
                   </div>
-                </div>
-
-                <!-- Image Preview -->
-                <div v-if="selectedImages.length > 0" class="mb-3">
-                  <h6>Image Preview:</h6>
+                  
+                  <!-- Image Preview -->
                   <div class="row g-2">
                     <div 
-                      v-for="(image, index) in selectedImages.slice(0, 6)" 
+                      v-for="(image, index) in selectedImages" 
                       :key="index" 
-                      class="col-4"
+                      class="col-4 mb-2"
                     >
-                      <div class="card">
+                      <div class="card position-relative">
+                        <button 
+                          type="button" 
+                          class="position-absolute btn btn-sm btn-danger p-1" 
+                          style="top: -8px; right: -8px; border-radius: 50%; z-index: 2;"
+                          @click="removeImage(index)"
+                        >
+                          <i class="fas fa-times"></i>
+                        </button>
                         <img 
                           :src="getImagePreview(image)" 
                           class="card-img-top" 
                           style="height: 80px; object-fit: cover;"
-                          :alt="`Image ${index + 1}`"
+                          :alt="`Preview ${index + 1}`"
                         >
                         <div class="card-body p-1">
-                          <small class="text-muted">{{ image.name }}</small>
+                          <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-truncate me-1">{{ image.name }}</small>
+                            <span v-if="getF5CodeFromFileName(image.name)" 
+                                  class="badge bg-success text-white">
+                              {{ getF5CodeFromFileName(image.name) }}
+                            </span>
+                            <span v-else class="badge bg-danger text-white">No F5 Code</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <small v-if="selectedImages.length > 6" class="text-muted">
-                    ...and {{ selectedImages.length - 6 }} more images
-                  </small>
                 </div>
 
                 <button 
@@ -214,6 +243,7 @@ export default {
     return {
       selectedFile: null,
       selectedImages: [],
+      imagesByF5Code: {}, // Map of F5 codes to image files
       geneticDataId: null,
       totalRecords: 0,
       fileError: '',
@@ -240,9 +270,87 @@ export default {
     },
     
     handleImagesChange(event) {
-      this.selectedImages = Array.from(event.target.files);
+      const files = event.target.files;
+      if (!files || !files.length) {
+        this.imagesError = 'Please select images';
+        return;
+      }
+      
+      this.selectedImages = Array.from(files);
       this.imagesError = '';
-      this.errorMessage = '';
+
+      // Extract F5 codes from file names and create a mapping
+      this.imagesByF5Code = {};
+      this.validateAndMapImages();
+    },
+
+    /**
+     * Validates image filenames and maps them to F5 codes
+     */
+    validateAndMapImages() {
+      this.imagesByF5Code = {};
+      this.imagesError = '';
+      
+      const imagesWithoutF5Codes = [];
+      const duplicateF5Codes = new Set();
+      const seenF5Codes = new Set();
+      
+      for (let i = 0; i < this.selectedImages.length; i++) {
+        const file = this.selectedImages[i];
+        const f5Code = this.getF5CodeFromFileName(file.name);
+        
+        if (f5Code) {
+          // Check if this F5 code has been seen before
+          if (seenF5Codes.has(f5Code)) {
+            duplicateF5Codes.add(f5Code);
+          } else {
+            seenF5Codes.add(f5Code);
+            this.imagesByF5Code[f5Code] = file;
+          }
+        } else {
+          imagesWithoutF5Codes.push(file.name);
+        }
+      }
+      
+      // Generate appropriate error messages
+      if (imagesWithoutF5Codes.length > 0) {
+        const examples = imagesWithoutF5Codes.slice(0, 3).map(name => `"${name}"`).join(', ');
+        this.imagesError = `${imagesWithoutF5Codes.length} image(s) don't have valid F5 codes in their filenames (e.g., ${examples}${imagesWithoutF5Codes.length > 3 ? ', ...' : ''}). Please rename your images to include F5 codes (e.g., F5-A001.jpg).`;
+        return false;
+      }
+      
+      if (duplicateF5Codes.size > 0) {
+        const examples = Array.from(duplicateF5Codes).slice(0, 3).join(', ');
+        this.imagesError = `You have multiple images with the same F5 codes: ${examples}${duplicateF5Codes.size > 3 ? ', ...' : ''}. Each F5 code should have only one image.`;
+        return false;
+      }
+      
+      return Object.keys(this.imagesByF5Code).length > 0;
+    },
+
+    /**
+     * Extracts F5 code from filename
+     * @param {string} fileName - The name of the file
+     * @return {string|null} - The F5 code or null if not found
+     */
+    getF5CodeFromFileName(fileName) {
+      const f5CodeRegex = /F5-[A-Za-z0-9]+/;
+      const match = fileName.match(f5CodeRegex);
+      return match ? match[0] : null;
+    },
+    
+    /**
+     * Removes an image from the selected images array
+     * @param {number} index - The index of the image to remove
+     */
+    removeImage(index) {
+      if (index >= 0 && index < this.selectedImages.length) {
+        // Create a new array without the removed image
+        this.selectedImages = this.selectedImages.filter((_, i) => i !== index);
+        
+        // Re-validate and map the remaining images
+        this.validateAndMapImages();
+      }
     },
 
     async previewData() {
@@ -319,8 +427,10 @@ export default {
         return;
       }
 
-      if (this.selectedImages.length !== this.totalRecords) {
-        this.imagesError = `Please select exactly ${this.totalRecords} images`;
+      // Check if we have F5 code matches in filenames
+      const f5CodeMatches = Object.keys(this.imagesByF5Code).length;
+      if (f5CodeMatches === 0) {
+        this.imagesError = 'No F5 codes found in image filenames. Please name images to match F5 codes (e.g., "F5-A001.jpg")';
         return;
       }
 
@@ -330,9 +440,18 @@ export default {
 
       const formData = new FormData();
       formData.append('genetic_data_id', this.geneticDataId);
-      this.selectedImages.forEach(image => {
+      
+      // Add mapping information to formData
+      const mapping = {};
+      Object.keys(this.imagesByF5Code).forEach(f5Code => {
+        const image = this.imagesByF5Code[f5Code];
         formData.append('images', image);
+        // Store mapping between image name and F5 code
+        mapping[image.name] = f5Code;
       });
+      
+      // Add the mapping JSON as a separate field
+      formData.append('f5_code_mapping', JSON.stringify(mapping));
 
       try {
         await axios.post('/file-uploader/genetic-data/images/', formData, {
@@ -343,7 +462,7 @@ export default {
         });
 
         this.imagesUploaded = true;
-        this.successMessage = 'Images uploaded and matched with genetic records successfully!';
+        this.successMessage = `${f5CodeMatches} images mapped to F5 codes and uploaded successfully!`;
         setTimeout(() => this.resetForm(), 3000);
       } catch (error) {
         this.errorMessage = error.response?.data?.error || 'Error uploading images';

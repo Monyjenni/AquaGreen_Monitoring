@@ -1,5 +1,5 @@
-Django>=3.2,<4.0
-pandas>=1.0,<2.0
+Django>=4.2,<5.0
+pandas>=1.0,<3.0
 openpyxl==3.1.2
 psycopg2-binary==2.9.9
 djangorestframework==3.14.0
@@ -7,3 +7,8 @@ python-dotenv==1.0.0
 django-cors-headers==4.3.1
 djangorestframework-simplejwt==5.3.1
 kafka-python==2.0.2
+gunicorn==21.2.0
+dj-database-url==2.1.0
+whitenoise==6.6.0
+google-cloud-storage==2.10.0
+google-cloud-sql-connector==1.4.3

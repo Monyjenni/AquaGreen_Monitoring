@@ -6,7 +6,6 @@
         </router-link>
       </div>
       <div class="text-center mb-5">
-        <img src="@/assets/images/Logo.png" alt="Logo" class="mb-3" style="height: 128px;">
         <h1 class="display-5 fw-bold mb-2">AquaGreen Upload Center</h1>
         <p class="lead text-muted">Easily upload and manage your Greenhouse and Genetic data. Choose a portal below to get started.</p>
       </div>
@@ -46,9 +45,6 @@ export default {
 </script>
 
 <style scoped>
-.upload-portal-bg {
-  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%);
-}
 .portal-card {
   border: none;
   border-radius: 1.5rem;

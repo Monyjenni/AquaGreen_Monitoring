@@ -115,10 +115,10 @@ app.config.globalProperties.$toast = {
   }
 }
 
-// Use the server's actual IP address when accessing from other machines
-axios.defaults.baseURL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+// Use environment variable in production, fallback to local development URL
+axios.defaults.baseURL = process.env.VUE_APP_API_URL || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://127.0.0.1:8000/api' 
-  : `http://${window.location.hostname}:8000/api`
+  : 'https://aquagreen-monitoring-backend.onrender.com/api')
 
 axios.interceptors.request.use(
   config => {

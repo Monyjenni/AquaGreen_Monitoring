@@ -3,9 +3,9 @@ import axios from 'axios'
 import cropModule from './cropModule'
 
 // Dynamically determine API URL based on hostname
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+const API_URL = process.env.VUE_APP_API_URL || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://127.0.0.1:8000/api'
-  : `http://${window.location.hostname}:8000/api`
+  : 'https://aquagreen-monitoring-backend.onrender.com/api')
 
 export default createStore({
   modules: {

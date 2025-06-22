@@ -1,7 +1,9 @@
 import axios from 'axios'
 
 // API URL should match the one in the main store
-const API_URL = 'http://127.0.0.1:8000/api'
+const API_URL = process.env.VUE_APP_API_URL || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://127.0.0.1:8000/api'
+  : 'https://aquagreen-monitoring-backend.onrender.com/api')
 
 const cropModule = {
   namespaced: true,

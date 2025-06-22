@@ -242,7 +242,7 @@ export default {
       this.nethouseIds = {};
       this.nethouseIdColumnName = null;
       
-      if (json.length <= 1) return;  
+      if (json.length <= 1) return;
       
       const possibleColumns = headers.filter(header => 
         header && typeof header === 'string' && 
@@ -259,7 +259,7 @@ export default {
       } else {
         for (let colIdx = 0; colIdx < headers.length; colIdx++) {
           let idCandidates = 0;
-          const checkRows = Math.min(10, json.length - 1);  
+          const checkRows = Math.min(10, json.length - 1);
           
           for (let rowIdx = 1; rowIdx <= checkRows; rowIdx++) {
             const row = json[rowIdx];
@@ -282,7 +282,7 @@ export default {
         for (let i = 1; i < json.length; i++) {
           const row = json[i];
           if (row && row[nethouseIdColumn]) {
-            const nethouseId = String(row[nethouseIdColumn]);  
+            const nethouseId = String(row[nethouseIdColumn]);
             this.nethouseIds[nethouseId] = (this.nethouseIds[nethouseId] || 0) + 1;
           }
         }

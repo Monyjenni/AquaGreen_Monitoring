@@ -45,7 +45,7 @@
       />
     </base-card>
     
-    <!-- Metadata Editor Modal -->
+
     <div 
       class="modal fade" 
       id="metadataEditorModal" 
@@ -107,7 +107,7 @@ import CropImageUploader from '@/components/CropImageUploader.vue';
 import CsvFileUploader from '@/components/CsvFileUploader.vue';
 import CropImageGallery from '@/components/CropImageGallery.vue';
 import MetadataEditor from '@/components/MetadataEditor.vue';
-// NamingGuideModal removed as requested
+
 
 export default {
   name: 'CropImagesView',
@@ -133,7 +133,7 @@ export default {
   },
   mounted() {
     this.fetchInitialData();
-    // Initialize Bootstrap modal
+
     this.$nextTick(() => {
       if (typeof bootstrap !== 'undefined') {
         this.metadataModal = new bootstrap.Modal(this.$refs.metadataModal);
@@ -157,7 +157,6 @@ export default {
     },
     
     handleCsvProcessed() {
-      // Refresh both CSV files and images after a CSV file has been processed
       this.refreshCsvFiles();
       this.refreshImages();
       this.$toast?.success('CSV file processed successfully!');
@@ -173,17 +172,13 @@ export default {
     handleMetadataUpdated(updatedMetadata) {
       if (this.selectedImage) {
         this.selectedImage.metadata = updatedMetadata;
-        // Refresh the images to ensure we have the latest data
         this.refreshImages();
       }
     },
     
     scrollToUploader() {
-      // Scroll to the uploader section
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    },
-    
-    // Naming guide removed as requested
+    }
   }
 };
 </script>

@@ -113,7 +113,7 @@ export default defineComponent({
       return this.getCsvFiles;
     },
     selectedFilesToShow() {
-      // Show only first 5 files to avoid cluttering the UI
+
       return this.selectedFiles.slice(0, 5);
     }
   },
@@ -127,42 +127,42 @@ export default defineComponent({
       const files = event.target.files;
       if (!files.length) return;
       
-      // Get folder name from path
+
       let folderName = '';
       if (files.length > 0 && files[0].webkitRelativePath) {
-        // Extract folder name from the first file's path
+
         const pathParts = files[0].webkitRelativePath.split('/');
         if (pathParts.length > 1) {
           folderName = pathParts[0];
         }
       }
       
-      // Check if we got a folder name
+
       if (folderName) {
         console.log(`Selected folder: ${folderName}`);
       }
       
-      // Filter for image files only
+
       const validImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
       const validFiles = Array.from(files).filter(file => validImageTypes.includes(file.type));
       const invalidFiles = Array.from(files).filter(file => !validImageTypes.includes(file.type));
       
-      // Process only valid image files
+
       this.selectedFiles = validFiles;
       
-      // Warn about invalid files if any
+
       if (invalidFiles.length > 0) {
         console.warn('Warning: Some selected files are not supported image formats:', invalidFiles.map(f => f.name));
         this.$toast?.warning(`${invalidFiles.length} files skipped - only JPG, PNG, and GIF formats are supported.`);
       }
       
-      // Check if we found any valid images
+
       if (this.selectedFiles.length === 0) {
         this.$toast?.error('No valid image files found in the selected folder. Please select a folder containing images.');
         return;
       }
       
-      // Success message for valid files
+
       this.$toast?.info(`Found ${this.selectedFiles.length} valid image files in ${folderName || 'selected folder'}.`); 
       this.uploadSuccess = false;
     },
@@ -173,7 +173,7 @@ export default defineComponent({
       this.uploadSuccess = false;
       this.validationErrors = [];
       
-      // Setup progress simulation
+
       const progressInterval = setInterval(() => {
         if (this.uploadProgress < 90) {
           this.uploadProgress += 5;
@@ -181,15 +181,15 @@ export default defineComponent({
       }, 300);
       
       try {
-        // Validate before upload
+
         if (!this.selectedCsvId) {
           throw new Error('Please select a CSV file first');
         }
         
-        // Get CSV file details to validate against
+
         const csvFile = await this.fetchCsvDetails(this.selectedCsvId);
         
-        // Validate images against CSV
+
         const validationResult = await this.validateImagesWithCsv(csvFile);
         if (!validationResult) {
           clearInterval(progressInterval);
@@ -197,40 +197,40 @@ export default defineComponent({
           return;
         }
         
-        // Prepare form data for upload
+
         const formData = new FormData();
         formData.append('csv_id', this.selectedCsvId);
         formData.append('sample_id_prefix', this.sampleIdPrefix);
         
-        // Add all files to the form data
+
         this.selectedFiles.forEach(file => {
           formData.append('images', file);
         });
         
-        // Upload the images
+
         const response = await this.uploadCropImages(formData);
         
-        // Complete the progress bar
+
         this.uploadProgress = 100;
         clearInterval(progressInterval);
         
-        // Check if we got a successful response with images
+
         if (response && response.images && response.images.length > 0) {
-          // Only mark as success if we actually got images back
+
           this.uploadSuccess = true;
           this.uploadedFiles = response.images.length;
           this.$toast?.success(`Successfully uploaded ${this.uploadedFiles} images!`);
           
-          // Emit event to notify parent component
+
           this.$emit('images-uploaded', response.images);
         } else {
-          // Even if server returns 200 but no images, treat as failure
+
           console.error('Upload error: Server returned success but no images');
           this.$toast?.error('Upload failed. No images were saved.');
           this.uploadSuccess = false;
         }
         
-        // Reset form for next upload
+
         this.resetForm();
       } catch (error) {
         console.error('Error uploading images:', error);
@@ -238,7 +238,7 @@ export default defineComponent({
       } finally {
         setTimeout(() => {
           this.uploading = false;
-        }, 500); // Keep progress bar visible briefly
+        }, 500);
       }
     },
     
@@ -247,11 +247,11 @@ export default defineComponent({
       this.uploadSuccess = false;
       this.uploadedFiles = 0;
       
-      // Reset the file input by clearing its value
+
       const fileInput = document.getElementById('cropImages');
       if (fileInput) fileInput.value = '';
       
-      // Force DOM update to ensure the file input is truly reset
+
       this.$nextTick(() => {
         const container = document.querySelector('.image-uploader');
         if (container) {
@@ -285,19 +285,19 @@ export default defineComponent({
     },
     
     validateImagesWithCsv(csvFile) {
-      // Check if CSV file has been processed
+
       if (!csvFile.processed) {
         this.$toast?.error('CSV file has not been processed yet. Please process it first.');
         return false;
       }
 
-      // Check if CSV file has row labels (from 'No.' column)
+
       if (!csvFile.metadata || !csvFile.metadata.row_labels || csvFile.metadata.row_labels.length === 0) {
         this.$toast?.error('CSV file does not contain any valid "No." labels. Please check the file format.');
         return false;
       }
 
-      // Ensure image count matches row label count
+
       if (this.selectedFiles.length !== csvFile.metadata.row_labels.length) {
         this.$toast?.error(`Number of images (${this.selectedFiles.length}) does not match number of rows (${csvFile.metadata.row_labels.length}) in the CSV.`);
         return false;

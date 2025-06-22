@@ -1,10 +1,8 @@
 import requests
 import json
 
-# Registration endpoint
 url = 'http://127.0.0.1:8000/api/auth/register/'
 
-# Test registration data
 user_data = {
     'username': 'testuser123',
     'email': 'testuser123@example.com',
@@ -12,7 +10,6 @@ user_data = {
     'verify_email': True
 }
 
-# Make the request
 print('Sending registration request with data:')
 print(json.dumps(user_data, indent=2))
 headers = {'Content-Type': 'application/json'}

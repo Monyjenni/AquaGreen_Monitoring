@@ -135,7 +135,7 @@
     </base-card>
   </div>
   
-  <!-- Delete Confirmation Modal -->
+
   <div class="modal fade" v-if="showDeleteConfirmation" tabindex="-1" style="display: block; background-color: rgba(0,0,0,0.5);">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -217,7 +217,7 @@ export default {
       this.processing = fileId;
       try {
         await this.processCsvFile(fileId);
-        this.fetchCsvFiles(); // Refresh the list after processing
+        this.fetchCsvFiles();
       } catch (error) {
         console.error('Error processing file:', error);
       } finally {
@@ -264,16 +264,16 @@ export default {
       } else {
         console.error('Error deleting file:', result.error);
         
-        // Show appropriate message based on error type
+  
         if (result.linkedToImages) {
-          // Make sure the warning is visible
+
           this.showDeletionWarning = true;
           
           this.$toast.error(result.error, {
-            timeout: 6000  // Show longer for important messages
+            timeout: 6000
           });
           
-          // Navigate to related images to help the user unlink them
+
           setTimeout(() => {
             this.viewRelatedImages(this.fileToDelete.id);
           }, 1500);

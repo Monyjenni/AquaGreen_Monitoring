@@ -2,7 +2,7 @@ import { createStore } from 'vuex'
 import axios from 'axios'
 import cropModule from './cropModule'
 
-// Dynamically determine API URL based on hostname
+
 const API_URL = process.env.VUE_APP_API_URL || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://127.0.0.1:8000/api'
   : 'https://aquagreen-monitoring-backend.onrender.com/api')
@@ -17,7 +17,7 @@ export default createStore({
     processedData: [],
     loading: false,
     error: null,
-    // Authentication state
+
     token: localStorage.getItem('token') || null,
     refreshToken: localStorage.getItem('refreshToken') || null,
     user: JSON.parse(localStorage.getItem('user')) || null,
@@ -49,14 +49,14 @@ export default createStore({
     setError(state, error) {
       state.error = error
     },
-    // Authentication mutations
+
     setAuth(state, { token, refreshToken, user }) {
       state.token = token
       state.refreshToken = refreshToken
       state.user = user
       state.isAuthenticated = true
       
-      // Store in localStorage
+
       localStorage.setItem('token', token)
       localStorage.setItem('refreshToken', refreshToken)
       localStorage.setItem('user', JSON.stringify(user))
@@ -67,7 +67,7 @@ export default createStore({
       state.user = null
       state.isAuthenticated = false
       
-      // Clear localStorage
+
       localStorage.removeItem('token')
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
@@ -77,7 +77,7 @@ export default createStore({
     }
   },
   actions: {
-    // Authentication actions
+
     registerUser({ commit }, userData) {
       commit('setLoading', true)
       commit('setError', null)
@@ -170,7 +170,7 @@ export default createStore({
       return Promise.resolve()
     },
     
-    // File management actions
+    
     fetchFiles({ commit, getters }) {
       commit('setLoading', true)
       commit('setError', null)

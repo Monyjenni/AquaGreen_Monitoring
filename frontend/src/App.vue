@@ -88,22 +88,18 @@ export default defineComponent({
   watch: {
     isAuthenticated(newValue) {
       if (newValue) {
-        // User has logged in, start session timeout tracking
         this.initializeSessionTimeout();
       } else {
-        // User has logged out, clean up session timeout
         this.cleanupSessionTimeout();
       }
     }
   },
   mounted() {
-    // Initialize session timeout if user is already authenticated
     if (this.isAuthenticated) {
       this.initializeSessionTimeout();
     }
   },
   beforeUnmount() {
-    // Clean up session timeout when component is destroyed
     this.cleanupSessionTimeout();
   },
   methods: {
@@ -117,10 +113,7 @@ export default defineComponent({
       this.$router.push("/login");
     },
     initializeSessionTimeout() {
-      // Clean up any existing session timeout first
       this.cleanupSessionTimeout();
-      
-      // Initialize new session timeout with automatic logout
       this.sessionTimeoutCleanup = initSessionTimeout(async () => {
         await this.logout();
         this.$router.push("/login");
@@ -212,7 +205,6 @@ body {
   box-shadow: 0 0 0 0.25rem rgba(117, 183, 152, 0.25);
 }
 
-/* Back button styles */
 .back-button {
   display: inline-flex;
   align-items: center;

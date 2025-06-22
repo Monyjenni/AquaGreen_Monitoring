@@ -1,6 +1,6 @@
 <template>
   <div class="crop-image-gallery">
-    <!-- Filters section -->
+
     <div class="card mb-4">
       <div class="card-header bg-light d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Image Filters</h5>
@@ -70,7 +70,7 @@
       </div>
     </div>
     
-    <!-- Images grid -->
+
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>

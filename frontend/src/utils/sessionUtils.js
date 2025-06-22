@@ -1,20 +1,20 @@
-// Session timeout manager
+
 const SESSION_TIMEOUT_KEY = 'lastActivityTime';
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 export function initSessionTimeout(logoutCallback) {
-  // Record initial activity
+
   updateLastActivity();
   
-  // Set up activity listeners
+
   const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart'];
   activityEvents.forEach(event => {
     window.addEventListener(event, updateLastActivity);
   });
   
-  // Start the timeout checker
+
   const intervalId = setInterval(() => {
     checkInactivity(logoutCallback);
-  }, 60000); // Check every minute
+  }, 60000);
   
   return () => {
     activityEvents.forEach(event => {

@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-// API URL should match the one in the main store
+
 const API_URL = process.env.VUE_APP_API_URL || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://127.0.0.1:8000/api'
   : 'https://aquagreen-monitoring-backend.onrender.com/api')
@@ -84,7 +84,7 @@ const cropModule = {
     }
   },
   actions: {
-    // CSV File actions
+
     fetchCsvFiles({ commit, rootGetters }) {
       commit('setLoading', true)
       commit('setError', null)
@@ -192,7 +192,7 @@ const cropModule = {
         })
     },
     
-    // Crop Image actions
+
     fetchCropImages({ commit, rootGetters }, filters = {}) {
       commit('setLoading', true)
       commit('setError', null)
@@ -267,7 +267,7 @@ const cropModule = {
         })
     },
     
-    // Metadata actions
+
     fetchMetadataLabels({ commit, rootGetters }) {
       commit('setLoading', true)
       

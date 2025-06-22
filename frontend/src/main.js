@@ -6,14 +6,14 @@ import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap/dist/js/bootstrap.bundle.js'
 import axios from 'axios'
 
-// Session activity tracking - 15 minute timeout
+
 let userActivityTimeout;
-const SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
+const SESSION_TIMEOUT = 15 * 60 * 1000;
 
 const resetUserActivityTimeout = () => {
   clearTimeout(userActivityTimeout);
   userActivityTimeout = setTimeout(() => {
-    // Only log out if user is authenticated
+
     if (store.getters.isAuthenticated) {
       store.commit('clearAuth');
       router.push('/login');
@@ -21,21 +21,21 @@ const resetUserActivityTimeout = () => {
   }, SESSION_TIMEOUT);
 };
 
-// Track user activity to reset the timeout
+
 window.addEventListener('mousemove', resetUserActivityTimeout);
 window.addEventListener('keypress', resetUserActivityTimeout);
 window.addEventListener('click', resetUserActivityTimeout);
 
-// Initialize the timeout on page load
+
 resetUserActivityTimeout();
 
-// Persist session on refresh but enforce timeout on inactivity
+
 
 const app = createApp(App)
   .use(store)
   .use(router)
 
-// Create a better toast plugin with more visually appealing design
+
 app.config.globalProperties.$toast = {
   success(message) {
     this._showToast(message, 'success', 'bi-check-circle-fill');
@@ -115,7 +115,7 @@ app.config.globalProperties.$toast = {
   }
 }
 
-// Use environment variable in production, fallback to local development URL
+
 axios.defaults.baseURL = process.env.VUE_APP_API_URL || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://127.0.0.1:8000/api' 
   : 'https://aquagreen-monitoring-backend.onrender.com/api')

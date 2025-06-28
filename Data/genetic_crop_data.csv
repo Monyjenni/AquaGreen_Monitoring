@@ -1,0 +1,11 @@
+No.,F5 Code,sample_id,species,cultivation_date,plant_age_days,growth_stage,health_status,description
+1,F5-001,CROP_001,Lettuce,15/01/2025,45,Mature,Healthy,Romaine lettuce sample with normal growth pattern
+2,F5-002,CROP_002,Lettuce,15/01/2025,45,Mature,Infected,Romaine lettuce sample showing early signs of fungal infection
+3,F5-003,CROP_003,Lettuce,20/01/2025,40,Pre-mature,Healthy,Butterhead lettuce growing under LED lights
+4,F5-004,CROP_004,Lettuce,20/01/2025,40,Pre-mature,Deficient,Butterhead lettuce showing signs of nitrogen deficiency
+5,F5-005,CROP_005,Lettuce,25/01/2025,35,Juvenile,Healthy,Red leaf lettuce with normal coloration
+6,F5-006,CROP_006,Lettuce,25/01/2025,35,Juvenile,Stressed,Red leaf lettuce with drought stress symptoms
+7,F5-007,CROP_007,Lettuce,01/02/2025,30,Early Growth,Healthy,Iceberg lettuce under optimal conditions
+8,F5-008,CROP_008,Lettuce,01/02/2025,30,Early Growth,Pest Damage,Iceberg lettuce with aphid infestation
+9,F5-009,CROP_009,Lettuce,05/02/2025,25,Seedling,Healthy,Green oak lettuce seedlings
+10,F5-010,CROP_010,Lettuce,05/02/2025,25,Seedling,Nutrient Burn,Green oak lettuce with fertilizer burn symptoms
